@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import Chat from "./Chat";
 import MemoryCenter from "./Memory";
-import { ApiError, fetchHealth, fetchStatus, setToken, type SystemStatus } from "./api";
+import Tools from "./Tools";
+import { ApiError, fetchHealth, fetchStatus, runTool, setToken, type SystemStatus, type Task } from "./api";
 
 type Conn = "checking" | "online" | "offline" | "locked";
 
@@ -64,7 +65,8 @@ export default function App() {
   const [conn, setConn] = useState<Conn>("checking");
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [error, setError] = useState("");
-  const [view, setView] = useState<"dashboard" | "chat" | "memory">("dashboard");
+  const [due, setDue] = useState<Task[]>([]);
+  const [view, setView] = useState<"dashboard" | "chat" | "memory" | "tools">("dashboard");
 
   const refresh = useCallback(async () => {
     try {
@@ -95,6 +97,14 @@ export default function App() {
     return () => window.clearInterval(id);
   }, [refresh]);
 
+  useEffect(() => {
+    if (conn !== "online") return;
+    const poll = () => void runTool<Task[]>("reminders_due").then(setDue, () => undefined);
+    poll();
+    const id = window.setInterval(poll, 30000);
+    return () => window.clearInterval(id);
+  }, [conn]);
+
   const unlock = (t: string) => {
     setToken(t);
     setConn("checking");
@@ -124,6 +134,9 @@ export default function App() {
           <button className={view === "memory" ? "on" : ""} onClick={() => setView("memory")}>
             Memory
           </button>
+          <button className={view === "tools" ? "on" : ""} onClick={() => setView("tools")}>
+            Tools
+          </button>
         </nav>
         <div className={`pill ${conn}`} role="status">
           {conn === "online" ? "Backend connected" : conn === "checking" ? "Connecting…" : "Backend offline"}
@@ -136,10 +149,19 @@ export default function App() {
         </p>
       )}
 
+      {due.length > 0 && (
+        <p role="alert" className="banner">
+          Reminder: {due.map((d) => d.title).join(" · ")} —{" "}
+          <button className="link small" onClick={() => setView("tools")}>open</button>
+        </p>
+      )}
+
       {view === "chat" ? (
         <Chat status={status} onStatusChange={() => void refresh()} />
       ) : view === "memory" ? (
         <MemoryCenter />
+      ) : view === "tools" ? (
+        <Tools />
       ) : (
       <main className="grid">
         <Card title="System">

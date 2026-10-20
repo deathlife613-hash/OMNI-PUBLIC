@@ -221,3 +221,14 @@ export const deleteNote = (id: number) => request<void>(`/api/notes/${id}`, "DEL
 export const exportAll = () => request<Record<string, unknown>>("/api/export");
 export const restoreBackup = (backup: Record<string, unknown>) =>
   request<{ restored: Record<string, number> }>("/api/restore", "POST", { confirm: true, backup });
+
+export interface Task {
+  id: number;
+  title: string;
+  due_at: string | null;
+  remind_at: string | null;
+  done: boolean;
+}
+export async function runTool<T = unknown>(name: string, args: Record<string, unknown> = {}, confirm = false): Promise<T> {
+  return (await request<{ result: T }>(`/api/tools/${name}/run`, "POST", { args, confirm })).result;
+}

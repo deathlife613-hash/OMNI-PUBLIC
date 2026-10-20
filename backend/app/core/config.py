@@ -6,7 +6,7 @@ from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-APP_VERSION = "0.2.0"
+APP_VERSION = "0.3.0"
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 
 
@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     ai_timeout_s: float = 60
     ai_max_retries: int = 2  # timeouts/5xx only; never for 429
     context_char_budget: int = 12000
+
+    # Folder OMNI may search/read (read-only, .txt/.md/.csv). Empty = document tools disabled.
+    docs_dir: Path | None = None
+    tool_timeout_s: float = 5
 
     @property
     def cors_origin_list(self) -> list[str]:
