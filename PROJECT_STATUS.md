@@ -88,3 +88,21 @@ Tool registry with Pydantic schemas, timeouts, `needs_confirmation` (delete requ
 | Tools UI in a real browser | NOT TESTED |
 | Model-driven tool calling from chat | NOT IMPLEMENTED (tools are user-invoked) |
 | Health/model-check/export tools | export + provider test exist as endpoints, not registry tools |
+
+## Phase 6 — Web search (2026-10-20)
+Adapters: Tavily (free plan 1,000 credits/month, no card — official docs) and self-hosted SearXNG. Brave excluded (no free tier, card + metered billing). Disabled unless configured; in-memory cache; OMNI's own daily cap (`OMNI_SEARCH_DAILY_CAP`, default 30); failed searches aren't counted; chat "Search the web" toggle injects results as UNTRUSTED data and returns clickable sources; failures are shown and chat still answers.
+
+## Phase 7 — Dashboard & polish
+Dashboard: quick actions, AI/connection, measured usage (since restart; tokens only if provider-reported), tasks, recent conversations, system (unavailable shown as unavailable). Settings: theme (dark/light/system), model info + test, integrations, backup pointer, security/sign-out, tool activity. Reminder banner while app is open.
+
+## Phase 8 — Hosting files
+`docs/DEPLOYMENT.md`, `docker-compose.vm.yml` + `Caddyfile` (HTTPS), `render.yaml` (demo only, ephemeral), `scripts/backup.py`, `.env.example` updated.
+
+| Check (Phases 6–7) | Result |
+|---|---|
+| Backend tests: 88 total (search adapters, cap, cache, chat integration, status) on Colab | PASS |
+| Frontend tsc + vite build + 7 vitest on Colab | PASS |
+| Real Tavily/SearXNG call | NOT TESTED |
+| Any UI in a real browser | NOT TESTED |
+| Docker build, compose, Caddy, any real deployment | NOT TESTED |
+| Hosted DB (Supabase/Firebase) backend | NOT IMPLEMENTED |

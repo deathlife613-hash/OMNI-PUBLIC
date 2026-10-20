@@ -1,0 +1,8 @@
+# Automatic HTTPS reverse proxy for a VM deployment. Replace omni.example.com with your domain
+# (its DNS A record must point at the VM). Used by docker-compose.vm.yml.
+omni.example.com {
+	encode gzip
+	reverse_proxy omni:8000 {
+		flush_interval -1   # lets streamed chat replies arrive token by token
+	}
+}

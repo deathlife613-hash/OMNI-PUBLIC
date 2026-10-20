@@ -51,3 +51,11 @@ Free tiers change often. **Re-verify the row for any service on its official pag
 
 ## 5. Cost guardrails
 OMNI never enables billing, buys credits, or routes to a paid provider on its own (`OMNI_ALLOW_PAID_PROVIDERS=false`). You must create accounts and decline any paid-upgrade prompts yourself.
+
+
+## Web search providers (checked 2026-10-20)
+| Service | Free? | Card | Verdict | Source |
+|---|---|---|---|---|
+| Tavily | Yes — "1,000 free API Credits every month" | "No credit card required" | **Used** (adapter `tavily`). Rate limits/commercial terms not stated on that page: verify before heavy use | https://docs.tavily.com/guides/api-credits |
+| Brave Search API | No free tier since Feb 2026; $5 monthly credit only with public attribution | Card required, billed after credit, no spending cap | **Excluded** (violates no-card/no-surprise-billing rule); per secondary report https://www.implicator.ai/brave-drops-free-search-api-tier-puts-all-developers-on-metered-billing.md | secondary source |
+| SearXNG | Free software; you host it | n/a | Adapter `searxng` (needs your own instance with JSON enabled) | https://docs.searxng.org |

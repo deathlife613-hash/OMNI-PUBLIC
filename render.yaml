@@ -1,0 +1,17 @@
+# DEMO ONLY — NOT TESTED. Render's free web service has an EPHEMERAL disk: all OMNI data is erased on
+# every restart/redeploy/spin-down. Download a backup (Memory tab) before you leave. See docs/DEPLOYMENT.md.
+services:
+  - type: web
+    name: omni
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: OMNI_ENV
+        value: production
+      - key: OMNI_ACCESS_TOKEN
+        sync: false   # you enter this in Render's dashboard; never commit it
+      - key: OMNI_AI_PROVIDER
+        value: groq
+      - key: OMNI_AI_API_KEY
+        sync: false

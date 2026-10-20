@@ -28,3 +28,12 @@ Four independent layers, each swappable through environment variables:
 
 ## Planned (not built)
 Provider router (P2) · memory & export (P3) · voice (P4) · tools (P5) · web search (P6) · hosting (P8) · bounded agents, coding workspace, approved skills (P9–10).
+
+
+## Modules (as of Phase 8)
+- `api/` thin routers: health, system (status), provider, chat (SSE), memory (memories/notes/export/restore), tools, search.
+- `models/` provider adapters behind one interface (`openai_compat` for Groq/OpenRouter; paid models blocked by default).
+- `services/` context builder (persona + relevant memories + web results + recent history within a budget), usage tracker, search adapters + cache/daily cap, memory retrieval.
+- `tools/` explicit registry; schemas, timeouts, confirmation flag, audit log. No shell, no unrestricted filesystem.
+- Frontend: `Dashboard`, `Chat`, `Memory`, `Tools`, `Settings`, separate `voice/` module.
+- Data: SQLite, versioned migrations (v3: conversations, messages, memories, notes, tasks, audit_log).
