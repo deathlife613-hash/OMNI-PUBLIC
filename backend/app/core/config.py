@@ -6,7 +6,7 @@ from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-APP_VERSION = "0.1.0"
+APP_VERSION = "0.2.0"
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 
 
@@ -22,12 +22,16 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
     frontend_dist: Path = BACKEND_DIR.parent / "frontend" / "dist"
 
-    # AI provider (wired up in Phase 2; Phase 1 only reports configuration state).
-    ai_provider: str = "groq"
-    ai_model: str = ""  # chosen after the model list is verified in Phase 2
-    ai_base_url: str = ""
+    # AI provider
+    ai_provider: str = "groq"  # groq | openrouter
+    ai_model: str = ""  # default model; can be changed at runtime from the UI
+    ai_base_url: str = ""  # override only if you know the endpoint is free to you
     ai_api_key: str = Field(default="", repr=False)
     allow_paid_providers: bool = False  # hard guard; never flipped automatically
+    ai_max_output_tokens: int = 1024
+    ai_timeout_s: float = 60
+    ai_max_retries: int = 2  # timeouts/5xx only; never for 429
+    context_char_budget: int = 12000
 
     @property
     def cors_origin_list(self) -> list[str]:

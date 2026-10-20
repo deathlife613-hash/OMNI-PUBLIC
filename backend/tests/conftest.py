@@ -3,15 +3,38 @@ from fastapi.testclient import TestClient
 
 from app.core.config import Settings
 from app.main import create_app
+from app.models.base import ModelInfo, Provider, StreamEvent
 from app.security.auth import reset_throttle
+
+
+class FakeProvider(Provider):
+    """Scriptable provider: yields `chunks`, then raises `error` if given."""
+
+    name = "fake"
+
+    def __init__(self, chunks=("Hello", " world"), error=None, models=("m1", "m2")):
+        self.chunks, self.error, self.models = list(chunks), error, list(models)
+        self.calls: list[tuple] = []
+
+    async def list_models(self):
+        if self.error and not self.chunks:
+            raise self.error
+        return [ModelInfo(m, 8192) for m in self.models]
+
+    async def stream_chat(self, messages, model, max_tokens):
+        self.calls.append((messages, model, max_tokens))
+        for c in self.chunks:
+            yield StreamEvent(delta=c)
+        if self.error:
+            raise self.error
 
 
 @pytest.fixture
 def make_client(tmp_path):
-    """Factory: make_client(env="production", access_token="x") -> TestClient."""
+    """Factory: make_client(provider=FakeProvider(), env="production", ...) -> TestClient."""
     reset_throttle()
 
-    def _make(**overrides) -> TestClient:
+    def _make(provider=None, **overrides) -> TestClient:
         base = dict(
             env="development",
             db_path=tmp_path / "test.db",
@@ -20,6 +43,6 @@ def make_client(tmp_path):
             frontend_dist=tmp_path / "no-dist",
         )
         base.update(overrides)
-        return TestClient(create_app(Settings(_env_file=None, **base)))
+        return TestClient(create_app(Settings(_env_file=None, **base), provider_override=provider))
 
     return _make

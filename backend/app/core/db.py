@@ -91,3 +91,18 @@ def ping(db_path: Path) -> bool:
         return True
     except sqlite3.Error:
         return False
+
+
+def get_meta(db_path: Path, key: str) -> str | None:
+    with session(db_path) as conn:
+        row = conn.execute("SELECT value FROM meta WHERE key = ?", (key,)).fetchone()
+    return row["value"] if row else None
+
+
+def set_meta(db_path: Path, key: str, value: str) -> None:
+    with session(db_path) as conn:
+        conn.execute(
+            "INSERT INTO meta(key, value) VALUES (?, ?) "
+            "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            (key, value),
+        )

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
+import Chat from "./Chat";
 import { ApiError, fetchHealth, fetchStatus, setToken, type SystemStatus } from "./api";
 
 type Conn = "checking" | "online" | "offline" | "locked";
@@ -62,6 +63,7 @@ export default function App() {
   const [conn, setConn] = useState<Conn>("checking");
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [error, setError] = useState("");
+  const [view, setView] = useState<"dashboard" | "chat">("dashboard");
 
   const refresh = useCallback(async () => {
     try {
@@ -111,6 +113,14 @@ export default function App() {
           <strong>OMNI</strong>
           <span className="muted">v{status?.version ?? "—"}</span>
         </div>
+        <nav className="tabs" aria-label="Views">
+          <button className={view === "dashboard" ? "on" : ""} onClick={() => setView("dashboard")}>
+            Dashboard
+          </button>
+          <button className={view === "chat" ? "on" : ""} onClick={() => setView("chat")}>
+            Chat
+          </button>
+        </nav>
         <div className={`pill ${conn}`} role="status">
           {conn === "online" ? "Backend connected" : conn === "checking" ? "Connecting…" : "Backend offline"}
         </div>
@@ -122,6 +132,9 @@ export default function App() {
         </p>
       )}
 
+      {view === "chat" ? (
+        <Chat status={status} onStatusChange={() => void refresh()} />
+      ) : (
       <main className="grid">
         <Card title="System">
           {status ? (
@@ -153,7 +166,13 @@ export default function App() {
               <dd>{ai.api_key_configured ? "Configured on server" : "Not configured"}</dd>
               <dt>Connection</dt>
               <dd>
-                <span className="muted">Not tested — provider adapter arrives in Phase 2</span>
+                {ai.connected === null ? (
+                  <span className="muted">Not tested yet (use Chat → Test connection)</span>
+                ) : ai.connected ? (
+                  <span style={{ color: "var(--good)" }}>Connected</span>
+                ) : (
+                  <span className="error">Failed: {ai.last_test?.message ?? "unknown"}</span>
+                )}
               </dd>
               <dt>Paid providers</dt>
               <dd>{ai.paid_providers_allowed ? "Allowed" : "Blocked"}</dd>
@@ -184,8 +203,8 @@ export default function App() {
           )}
         </Card>
 
-        <Card title="Conversations" phase="Phase 2">
-          <p className="muted">Not implemented yet. The database tables exist; chat arrives in Phase 2.</p>
+        <Card title="Conversations">
+          <p className="muted">Open the Chat tab to start or continue a conversation.</p>
         </Card>
         <Card title="Tasks & reminders" phase="Phase 5">
           <p className="muted">Not implemented yet.</p>
@@ -195,6 +214,7 @@ export default function App() {
           <p className="muted">Controls are disabled until voice is built.</p>
         </Card>
       </main>
+      )}
     </div>
   );
 }

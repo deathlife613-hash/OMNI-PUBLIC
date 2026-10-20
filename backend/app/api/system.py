@@ -3,8 +3,9 @@
 import shutil
 import time
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
+from app.api.provider import effective_model
 from app.core import db
 from app.core.config import APP_VERSION, Settings, get_settings
 from app.security.auth import require_auth
@@ -42,7 +43,8 @@ def _disk(settings: Settings) -> dict | None:
 
 
 @router.get("/status")
-def status(settings: Settings = Depends(get_settings)) -> dict:
+def status(request: Request, settings: Settings = Depends(get_settings)) -> dict:
+    last = request.app.state.provider_state  # None until "Test connection" is run
     return {
         "name": "OMNI",
         "version": APP_VERSION,
@@ -54,9 +56,10 @@ def status(settings: Settings = Depends(get_settings)) -> dict:
         "ai": {
             # Booleans/names only. The key itself is never serialized.
             "provider": settings.ai_provider,
-            "model": settings.ai_model or None,
+            "model": effective_model(settings) or None,
             "api_key_configured": bool(settings.ai_api_key),
-            "connected": None,  # unknown until Phase 2 provider test exists
+            "connected": last["ok"] if last else None,  # None = not tested yet
+            "last_test": last,
             "paid_providers_allowed": settings.allow_paid_providers,
         },
         "auth": {"token_required": bool(settings.access_token)},

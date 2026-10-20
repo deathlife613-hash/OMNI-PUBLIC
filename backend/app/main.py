@@ -4,13 +4,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api import health, system
+from app.api import chat, health, provider, system
 from app.core import db
 from app.core.config import APP_VERSION, Settings, get_settings
+from app.models.base import Provider
+from app.services.usage import UsageTracker
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
-    """Build the app. Passing settings explicitly keeps tests isolated from the environment."""
+def create_app(settings: Settings | None = None, provider_override: Provider | None = None) -> FastAPI:
+    """Build the app. Passing settings/provider explicitly keeps tests isolated."""
     settings = settings or get_settings()
 
     @asynccontextmanager
@@ -20,6 +22,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(title="OMNI", version=APP_VERSION, lifespan=lifespan, docs_url=None, redoc_url=None)
     app.dependency_overrides[get_settings] = lambda: settings
+    app.state.provider = provider_override
+    app.state.provider_state = None  # result of the last "Test connection", None = never tested
+    app.state.usage = UsageTracker()
 
     app.add_middleware(
         CORSMiddleware,
@@ -30,6 +35,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(health.router, prefix="/api")
     app.include_router(system.router, prefix="/api")
+    app.include_router(provider.router, prefix="/api")
+    app.include_router(chat.router, prefix="/api")
 
     # Single-container deployment: serve the built frontend when present.
     if settings.frontend_dist.is_dir():
