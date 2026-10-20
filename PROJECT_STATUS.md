@@ -1,15 +1,15 @@
 # OMNI — Project Status
 
-**Last updated:** 2026-10-20 · **Current phase:** 1 (Foundation) — files written, only partly verified
+**Last updated:** 2026-10-20 · **Current phase:** 1 (Foundation) — backend tests and frontend build verified on Google Colab
 
 ## Verification (PASS / FAIL / NOT TESTED)
 | Check | Result |
 |---|---|
 | All backend Python files compile | PASS |
 | DB migrations: idempotent init, tables, FK cascade, role CHECK (run directly with stdlib) | PASS |
-| Backend API tests (health, status, auth, throttle; 9 tests) | **NOT TESTED** — sandbox blocked PyPI (HTTP 403 policy), FastAPI/pytest not installable |
+| Backend tests (health, status, auth, throttle, DB; 11 tests), Python 3.13, run on Google Colab 2026-10-20 | PASS (11 passed in 0.53s) |
 | Backend starts with `uvicorn` | NOT TESTED |
-| Frontend `npm install` / `tsc` / `vite build` | **NOT TESTED** — npm registry blocked (403) |
+| Frontend `npm install`, `tsc --noEmit`, `vite build` (Vite 5.4.21), run on Google Colab 2026-10-20 | PASS (32 modules, built in 1.63s) |
 | Frontend ↔ backend in a browser | NOT TESTED |
 | Docker build / compose | NOT TESTED |
 | Any AI provider call | NOT BUILT (Phase 2) |
@@ -24,7 +24,7 @@ Repo structure · env config (`core/config.py`) · SQLite + versioned migrations
 - Stack unchanged from the Master Build Prompt (React/TS/Vite, FastAPI, SQLite → Postgres adapter in Phase 8).
 
 ## Known gaps / bugs
-- Tests above have never been run — expect small fixes on first run.
+- GitHub Actions cannot run: the GitHub account reports a billing lock. Tests were run on Colab instead.
 - PWA manifest/service worker not added yet.
 - Throttle is per-process and keyed by client IP (shared behind proxies).
 - Google/AWS/Azure/Vercel/Netlify/HF Spaces/Deno/GitHub Pages/Firebase not yet researched.
