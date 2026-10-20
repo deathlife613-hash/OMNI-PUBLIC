@@ -37,3 +37,20 @@ Repo structure · env config (`core/config.py`) · SQLite + versioned migrations
 ## Next steps
 1. You run `pytest` and `npm run build`; I fix what fails.
 2. Phase 2: provider adapter interface, Groq adapter (OpenAI-compatible), live model list + capability test, chat endpoint with streaming, conversation persistence, quota/429 handling, "Test provider connection".
+
+## Phase 2 — AI conversation (2026-10-20)
+
+**Built:** provider adapter interface; OpenAI-compatible adapter (Groq, OpenRouter `:free` only unless `allow_paid_providers`); bounded retries (never on 429); SSE streaming chat; conversations CRUD; context budget; usage tracker (measured values only); chat UI with Test connection + model picker.
+
+| Check | Result |
+|---|---|
+| Backend tests (33: 11 Phase 1 + 10 adapter + 12 chat), Python 3.13 on Colab | PASS |
+| Frontend `tsc --noEmit` + `vite build` on Colab | PASS |
+| Live call to a real hosted model (needs a Groq key) | NOT TESTED |
+| Streaming in a real browser against a running backend | NOT TESTED |
+| Docker build | NOT TESTED |
+| Ollama / Hugging Face adapters | NOT IMPLEMENTED |
+
+**Fixed:** chat tests failed because `TestClient` skips the lifespan hook; the fixture now calls `init_db`. App startup was unaffected.
+
+**Next:** user creates a free Groq key and sets `OMNI_AI_API_KEY` on the backend (never in chat); run the live test; then Phase 3 (memory).
