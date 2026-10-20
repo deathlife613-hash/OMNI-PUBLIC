@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import VoiceBar, { loadPrefs, type VoicePrefs } from "./voice/VoiceBar";
+import { speak } from "./voice/speech";
 import {
   createConversation,
   createMemory,
@@ -33,6 +35,7 @@ export default function Chat({ status, onStatusChange }: Props) {
   const [models, setModels] = useState<ModelEntry[] | null>(null);
   const [test, setTest] = useState<LastTest | null>(null);
   const [info, setInfo] = useState("");
+  const [prefs, setPrefs] = useState<VoicePrefs>(loadPrefs);
   const abortRef = useRef<AbortController | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
 
@@ -107,11 +110,21 @@ export default function Chat({ status, onStatusChange }: Props) {
     setMessages((m) => [...m, { id: -Date.now(), role: "user", content: text, created_at: "" }]);
     const ctrl = new AbortController();
     abortRef.current = ctrl;
-    const err = await streamMessage(id, text, (d) => setPartial((p) => p + d), ctrl.signal);
+    let reply = "";
+    const err = await streamMessage(
+      id,
+      text,
+      (d) => {
+        reply += d;
+        setPartial((p) => p + d);
+      },
+      ctrl.signal,
+    );
     abortRef.current = null;
     setStreaming(false);
     setPartial("");
     if (err) setError(err);
+    if (!err && reply && prefs.speakReplies) speak(reply, { voiceURI: prefs.voiceURI, rate: prefs.rate });
     await open(id); // reload what the server actually stored
     await refreshList();
     onStatusChange();
@@ -249,6 +262,7 @@ export default function Chat({ status, onStatusChange }: Props) {
           <div ref={endRef} />
         </div>
 
+        <VoiceBar prefs={prefs} onPrefs={setPrefs} onTranscript={setDraft} />
         <form onSubmit={(e) => void send(e)} className="composer">
           <textarea
             aria-label="Message"

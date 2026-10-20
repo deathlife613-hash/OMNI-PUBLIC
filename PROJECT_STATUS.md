@@ -54,3 +54,16 @@ Repo structure · env config (`core/config.py`) · SQLite + versioned migrations
 **Fixed:** chat tests failed because `TestClient` skips the lifespan hook; the fixture now calls `init_db`. App startup was unaffected.
 
 **Next:** user creates a free Groq key and sets `OMNI_AI_API_KEY` on the backend (never in chat); run the live test; then Phase 3 (memory).
+
+## Phase 3 — Persistent memory (2026-10-20)
+
+**Built:** `memories` (fact/preference, enable/disable, edit, delete, search) and `notes` tables (migration 2); user-approved only; secrets (API keys, passwords) refused; relevant-only retrieval injected into the model prompt (bounded, master on/off switch); JSON export and all-or-nothing restore (needs `confirm`); Memory tab UI; "Remember" button on chat replies.
+
+| Check | Result |
+|---|---|
+| Backend tests (43 total, 10 new for memory/notes/export/restore/restart persistence/auth) on Colab | PASS |
+| Frontend `tsc --noEmit` + `vite build` on Colab | PASS |
+| Memory UI used in a real browser | NOT TESTED |
+| Memory effect on a real model's answers | NOT TESTED (needs Groq key) |
+
+**Limits:** retrieval is keyword-based (no embeddings); conversation summarization not built yet.
