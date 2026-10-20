@@ -103,6 +103,7 @@ export interface SystemStatus {
     paid_providers_allowed: boolean;
   };
   auth: { token_required: boolean };
+  integrations: { search: { configured: boolean; provider: string | null }; documents: { enabled: boolean } };
 }
 
 export interface Conversation {
@@ -240,3 +241,28 @@ export interface Task {
 export async function runTool<T = unknown>(name: string, args: Record<string, unknown> = {}, confirm = false): Promise<T> {
   return (await request<{ result: T }>(`/api/tools/${name}/run`, "POST", { args, confirm })).result;
 }
+
+export interface Usage {
+  requests: number;
+  successful: number;
+  errors: Record<string, number>;
+  rate_limit_events: number;
+  avg_latency_ms: number | null;
+  tokens: { prompt: number; completion: number; requests_reporting_usage: number };
+}
+export interface SearchStatus {
+  configured: boolean;
+  provider: string | null;
+  used_today: number;
+  daily_cap: number;
+  cache_hits: number;
+}
+export interface AuditEntry {
+  id: number;
+  at: string;
+  tool: string;
+  outcome: string;
+}
+export const fetchUsage = () => request<Usage>("/api/usage");
+export const fetchSearchStatus = () => request<SearchStatus>("/api/search/status");
+export const fetchAudit = () => request<AuditEntry[]>("/api/audit");

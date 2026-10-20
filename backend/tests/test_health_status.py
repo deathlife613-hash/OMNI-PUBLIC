@@ -30,3 +30,10 @@ def test_status_reports_unavailable_as_null_not_fake(make_client):
     assert body["ai"]["model"] is None
     assert body["ai"]["api_key_configured"] is False
     assert body["database"]["ok"] is True
+
+
+def test_status_reports_integrations_without_secrets(make_client):
+    c = make_client(search_provider="tavily", search_api_key="tvly-SECRETSECRETSECRET")
+    r = c.get("/api/status")
+    assert r.json()["integrations"] == {"search": {"configured": True, "provider": "tavily"}, "documents": {"enabled": False}}
+    assert "SECRETSECRET" not in r.text

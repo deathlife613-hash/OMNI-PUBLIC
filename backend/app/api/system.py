@@ -63,4 +63,11 @@ def status(request: Request, settings: Settings = Depends(get_settings)) -> dict
             "paid_providers_allowed": settings.allow_paid_providers,
         },
         "auth": {"token_required": bool(settings.access_token)},
+        "integrations": {
+            "search": {
+                "configured": bool(request.app.state.search_provider) or bool(settings.search_provider),
+                "provider": settings.search_provider or None,
+            },
+            "documents": {"enabled": bool(settings.docs_dir)},
+        },
     }
