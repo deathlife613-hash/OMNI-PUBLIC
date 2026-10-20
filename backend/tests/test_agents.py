@@ -169,7 +169,7 @@ def wsdir(tmp_path):
     return d
 
 
-def coding_run(c, changes, notes="n"):
+def coding_run(changes, notes="n"):
     return json.dumps({"notes": notes, "changes": changes})
 
 
