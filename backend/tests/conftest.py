@@ -1,6 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from app.core import db
 from app.core.config import Settings
 from app.main import create_app
 from app.models.base import ModelInfo, Provider, StreamEvent
@@ -43,6 +44,8 @@ def make_client(tmp_path):
             frontend_dist=tmp_path / "no-dist",
         )
         base.update(overrides)
-        return TestClient(create_app(Settings(_env_file=None, **base), provider_override=provider))
+        settings = Settings(_env_file=None, **base)
+        db.init_db(settings.db_path)  # TestClient without `with` skips the lifespan hook
+        return TestClient(create_app(settings, provider_override=provider))
 
     return _make
