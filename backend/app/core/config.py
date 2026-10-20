@@ -6,7 +6,7 @@ from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-APP_VERSION = "0.5.0"
+APP_VERSION = "0.6.0"
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 
 

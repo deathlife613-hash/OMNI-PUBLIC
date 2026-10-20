@@ -306,3 +306,20 @@ export async function runAgentTask(id: string, onEvent: (event: string, data: Re
     }
   }
 }
+
+export interface SkillVersion {
+  version: string; status: string; created_by: string; review: string | null;
+  validation: { ok: boolean; errors: string[]; warnings: string[]; tests: { test: number; passed: boolean; detail: string }[] };
+  manifest: { description: string; trigger: string; inputs: { name: string; type: string }[]; permissions: { network: boolean; files: boolean; use_memories: boolean } };
+}
+export interface Skill { name: string; active_version: string | null; enabled: boolean; versions: SkillVersion[] }
+export const listSkills = () => request<Skill[]>("/api/skills");
+export const proposeSkill = (manifest: unknown) => request<unknown>("/api/skills/propose", "POST", { manifest });
+export const draftSkill = (r: string) => request<unknown>("/api/skills/draft", "POST", { request: r });
+export const reviewSkill = (n: string, v: string) => request<{ review: string }>(`/api/skills/${n}/versions/${v}/review`, "POST");
+export const activateSkill = (n: string, v: string, approvePerm = false) =>
+  request<unknown>(`/api/skills/${n}/versions/${v}/activate`, "POST", { confirm: true, approve_permission_change: approvePerm });
+export const rejectSkill = (n: string, v: string) => request<unknown>(`/api/skills/${n}/versions/${v}/reject`, "POST");
+export const skillAction = (n: string, a: "enable" | "disable") => request<unknown>(`/api/skills/${n}/${a}`, "POST");
+export const rollbackSkill = (n: string) => request<unknown>(`/api/skills/${n}/rollback`, "POST", { confirm: true });
+export const runSkill = (n: string, inputs: Record<string, string>) => request<{ output: string }>(`/api/skills/${n}/run`, "POST", { inputs });

@@ -109,6 +109,28 @@ MIGRATIONS: list[tuple[int, str]] = [
         );
         """,
     ),
+    (
+        5,
+        """
+        CREATE TABLE skills (
+            name TEXT PRIMARY KEY,
+            active_version TEXT,
+            enabled INTEGER NOT NULL DEFAULT 0 CHECK (enabled IN (0,1))
+        );
+        CREATE TABLE skill_versions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            version TEXT NOT NULL,
+            manifest TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'staged' CHECK (status IN ('staged','active','superseded','rejected')),
+            validation TEXT NOT NULL,
+            review TEXT,
+            created_by TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+            UNIQUE (name, version)
+        );
+        """,
+    ),
 ]
 
 

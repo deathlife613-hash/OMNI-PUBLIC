@@ -5,6 +5,7 @@ import Settings, { applyTheme, loadTheme } from "./Settings";
 import MemoryCenter from "./Memory";
 import Tools from "./Tools";
 import Agents from "./Agents";
+import Skills from "./Skills";
 import { ApiError, fetchHealth, fetchStatus, runTool, setToken, type SystemStatus, type Task } from "./api";
 
 type Conn = "checking" | "online" | "offline" | "locked";
@@ -124,6 +125,9 @@ export default function App() {
           <button className={view === "agents" ? "on" : ""} onClick={() => setView("agents")}>
             Agents
           </button>
+          <button className={view === "skills" ? "on" : ""} onClick={() => setView("skills")}>
+            Skills
+          </button>
           <button className={view === "settings" ? "on" : ""} onClick={() => setView("settings")}>
             Settings
           </button>
@@ -154,6 +158,8 @@ export default function App() {
         <Tools />
       ) : view === "agents" ? (
         <Agents />
+      ) : view === "skills" ? (
+        <Skills />
       ) : view === "settings" ? (
         <Settings status={status} go={setView} />
       ) : (

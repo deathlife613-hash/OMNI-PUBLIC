@@ -110,3 +110,15 @@ Dashboard: quick actions, AI/connection, measured usage (since restart; tokens o
 ## End-to-end UI test (2026-10-20, Google Colab)
 Real `uvicorn` server + built frontend + headless Chromium (Playwright), scripted fake model/search (no keys, no network): **16/16 PASS** — dashboard connected/usage, chat send + streamed reply + sidebar, web-search source link, test connection, memory add + secret refusal, tools calculator/task/delete-with-confirmation, theme switch, security/audit, backup download, mobile width (no overflow), no uncaught page errors. Run: `backend/e2e/ui_test.py` against `backend/e2e/server.py`.
 Still NOT TESTED: a real hosted model, real microphone/speech, Docker, real deployment.
+
+## Phase 9 — Agents & coding workspace (2026-10-20)
+Sequential manager→role steps on ONE model with checkpoints in SQLite; limits (steps, model calls, seconds/run, one task at a time); quota/outage pauses without losing state and resumes without re-planning; cancel; SSE progress. Roles enabled: manager, research (uses search if configured), planning, coding, review, documentation, data. NOT enabled: testing, devops, skill-creator-as-task, memory (they would need command execution/sandboxing). Coding workspace: read-only viewer; Coding Agent can only create pending diffs; a human approves → file written (stale-file check) → revert possible (refuses to clobber newer edits). Paths confined to `OMNI_WORKSPACE_DIR`; blocks traversal, symlinks, secret-named files, `.git`, non-text types; secrets in proposals rejected. **No command execution exists; "run tests" is not implemented.** No Git branches (not relied on). Parallel agents NOT implemented (sequential by design).
+
+| Check | Result |
+|---|---|
+| Backend tests: 116 total (agents + workspace + limits/pause/resume/cancel/escape/approval/revert) on Colab | PASS |
+| Agents UI in a real browser | NOT TESTED |
+| Agents with a real model (plan-JSON reliability varies by model) | NOT TESTED |
+
+## Phase 10 — Skills (2026-10-20)
+Declarative skills only (prompt template + input schema + declared permissions + deterministic tests + changelog + provenance). Lifecycle: propose/draft → staged (validated + tests auto-run) → optional AI review (advisory) → human activation with explicit confirm → run → disable/enable/rollback/reject. New skills inactive; failed validation cannot be activated; permission expansion needs extra explicit approval; versions only increase; no endpoint touches security rules/model router/logging; all actions audited. No code-executing skills (no sandbox).

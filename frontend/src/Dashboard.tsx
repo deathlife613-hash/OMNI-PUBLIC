@@ -27,7 +27,7 @@ function Card({ title, children }: { title: string; children: ReactNode }) {
 }
 const Unavailable = ({ why }: { why?: string }) => <span className="muted">Unavailable{why ? ` (${why})` : ""}</span>;
 
-export type View = "dashboard" | "chat" | "memory" | "tools" | "agents" | "settings";
+export type View = "dashboard" | "chat" | "memory" | "tools" | "agents" | "skills" | "settings";
 
 export default function Dashboard({ status, go }: { status: SystemStatus | null; go: (v: View) => void }) {
   const [usage, setUsage] = useState<Usage | null>(null);

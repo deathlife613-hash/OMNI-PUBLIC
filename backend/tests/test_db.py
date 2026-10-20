@@ -5,11 +5,11 @@ from app.core import db
 
 def test_init_creates_schema_and_is_idempotent(tmp_path):
     path = tmp_path / "x.db"
-    assert db.init_db(path) == 4
-    assert db.init_db(path) == 4  # second run changes nothing
+    assert db.init_db(path) == 5
+    assert db.init_db(path) == 5  # second run changes nothing
     with db.session(path) as conn:
         tables = {r["name"] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-    assert {"meta", "conversations", "messages", "schema_version", "memories", "notes", "tasks", "audit_log", "agent_tasks", "agent_steps", "agent_approvals"} <= tables
+    assert {"meta", "conversations", "messages", "schema_version", "memories", "notes", "tasks", "audit_log", "agent_tasks", "agent_steps", "agent_approvals", "skills", "skill_versions"} <= tables
 
 
 def test_message_cascade_and_role_check(tmp_path):
