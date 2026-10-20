@@ -8,6 +8,7 @@ from app.api import agents, chat, health, memory, provider, search, skills, syst
 from app.core import db
 from app.core.config import APP_VERSION, Settings, get_settings
 from app.models.base import Provider
+from app.security.limits import ModelCallLimiter, SecurityHeaders
 from app.services.search import SearchGuard, SearchProvider
 from app.services.usage import UsageTracker
 
@@ -32,6 +33,8 @@ def create_app(
     app.state.usage = UsageTracker()
     app.state.search_provider = search_override
     app.state.search_guard = SearchGuard()
+    app.state.limiter = ModelCallLimiter()
+    app.add_middleware(SecurityHeaders)
 
     app.add_middleware(
         CORSMiddleware,

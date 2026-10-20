@@ -17,6 +17,7 @@ from app.core import db
 from app.core.config import Settings, get_settings
 from app.models.base import ChatMessage, ProviderError, TokenUsage
 from app.security.auth import require_auth
+from app.security.limits import limit_model_calls
 from app.services.context import build_context
 from app.api.search import run_search
 from app.services.memory import relevant_memories
@@ -95,7 +96,7 @@ def _sse(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data)}\n\n"
 
 
-@router.post("/conversations/{conv_id}/messages")
+@router.post("/conversations/{conv_id}/messages", dependencies=[Depends(limit_model_calls)])
 async def send_message(
     conv_id: str,
     body: NewMessage,

@@ -6,7 +6,7 @@ from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-APP_VERSION = "0.6.0"
+APP_VERSION = "1.0.0-rc1"
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 
 
@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     ai_timeout_s: float = 60
     ai_max_retries: int = 2  # timeouts/5xx only; never for 429
     context_char_budget: int = 12000
+    model_rpm_limit: int = 20  # OMNI's own cap on model-spending requests per minute
 
     # Agents & coding workspace (Phase 9). Workspace = a folder OMNI may read; edits need your approval.
     workspace_dir: Path | None = None

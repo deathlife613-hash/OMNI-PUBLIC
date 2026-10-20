@@ -11,6 +11,7 @@ from app.core import db
 from app.core.config import Settings, get_settings
 from app.models.base import ChatMessage, ProviderError
 from app.security.auth import require_auth
+from app.security.limits import limit_model_calls
 from app.services.memory import relevant_memories
 from app.skills.manifest import Manifest, permissions_expanded, render, semver, validate
 
@@ -87,7 +88,7 @@ def propose(body: Propose, settings: Settings = Depends(get_settings)) -> dict:
     return _stage(settings, m, "user")
 
 
-@router.post("/skills/draft", status_code=201)
+@router.post("/skills/draft", status_code=201, dependencies=[Depends(limit_model_calls)])
 async def draft(body: Draft, request: Request, settings: Settings = Depends(get_settings)) -> dict:
     """The Skill Creator drafts a manifest into STAGING. It is never activated by this call."""
     raw = await _ask(request, settings, CREATOR_PROMPT, body.request, 900)
@@ -127,7 +128,7 @@ class Activate(BaseModel):
     approve_permission_change: bool = False
 
 
-@router.post("/skills/{name}/versions/{version}/review")
+@router.post("/skills/{name}/versions/{version}/review", dependencies=[Depends(limit_model_calls)])
 async def review(name: str, version: str, request: Request, settings: Settings = Depends(get_settings)) -> dict:
     with db.session(settings.db_path) as c:
         v = _version(c, name, version)
@@ -223,7 +224,7 @@ class RunBody(BaseModel):
     inputs: dict = {}
 
 
-@router.post("/skills/{name}/run")
+@router.post("/skills/{name}/run", dependencies=[Depends(limit_model_calls)])
 async def run_skill(name: str, body: RunBody, request: Request, settings: Settings = Depends(get_settings)) -> dict:
     with db.session(settings.db_path) as c:
         sk = c.execute("SELECT * FROM skills WHERE name = ?", (name,)).fetchone()

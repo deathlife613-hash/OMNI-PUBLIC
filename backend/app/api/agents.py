@@ -12,6 +12,7 @@ from app.agents.engine import run_task
 from app.core import db
 from app.core.config import Settings, get_settings
 from app.security.auth import require_auth
+from app.security.limits import limit_model_calls
 from app.tools.base import ToolError
 
 router = APIRouter(dependencies=[Depends(require_auth)])
@@ -70,7 +71,7 @@ def get_task(task_id: str, settings: Settings = Depends(get_settings)) -> dict:
     return t
 
 
-@router.post("/agents/tasks/{task_id}/run")
+@router.post("/agents/tasks/{task_id}/run", dependencies=[Depends(limit_model_calls)])
 async def run(task_id: str, request: Request, settings: Settings = Depends(get_settings)) -> StreamingResponse:
     """Start or resume. Streams progress. If the connection closes, the task is paused and resumable."""
     with db.session(settings.db_path) as c:

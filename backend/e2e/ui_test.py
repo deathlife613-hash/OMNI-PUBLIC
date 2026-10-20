@@ -5,6 +5,12 @@ from playwright.sync_api import expect, sync_playwright
 
 URL = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8765"
 results = []
+SKILL = {
+    "name": "tidy-notes", "version": "1.0.0", "description": "Rewrites rough notes into a tidy bullet list.",
+    "trigger": "When the user pastes messy notes", "inputs": [{"name": "text", "type": "string"}],
+    "prompt_template": "Rewrite these notes as short bullet points:\n{{text}}",
+    "tests": [{"inputs": {"text": "buy milk"}, "expect_contains": ["buy milk"]}],
+}
 
 
 def step(name, fn):
@@ -72,6 +78,60 @@ with sync_playwright() as p:
         page.get_by_role("button", name="Delete").first.click()
         expect(page.get_by_text("Pay rent")).to_have_count(0, timeout=5000)
     step("tools: delete asks confirmation then deletes", lambda: (delete_task(), None if any("permanently" in m for m in dlg) else (_ for _ in ()).throw(AssertionError("no confirm dialog"))))
+
+
+    def agents_plain():
+        page.get_by_role("button", name="Agents", exact=True).click()
+        page.get_by_label("Agent goal", exact=True).fill("plan my week")
+        page.get_by_role("button", name="Start", exact=True).click()
+        expect(page.get_by_text("Status: succeeded")).to_be_visible(timeout=15000)
+        expect(page.get_by_text("Plan: step one.").first).to_be_visible()
+        expect(page.get_by_text("Team summary: done.")).to_be_visible()
+    step("agents: goal runs plan -> step -> summary", agents_plain)
+
+    def agents_coding():
+        page.get_by_label("Agent goal", exact=True).fill("change the code")
+        page.get_by_role("button", name="Start", exact=True).click()
+        expect(page.get_by_role("heading", name="Waiting for your approval")).to_be_visible(timeout=15000)
+        expect(page.locator("pre.diff").first).to_contain_text("+print('v2')")
+    step("agents: coding step shows a diff awaiting approval (file untouched)", agents_coding)
+
+    def agents_approve_revert():
+        page.get_by_role("button", name="Approve & write file").click()
+        expect(page.get_by_role("heading", name="Waiting for your approval")).to_have_count(0, timeout=10000)
+        page.get_by_role("button", name="change the code").click()
+        expect(page.get_by_role("button", name="Revert")).to_be_visible(timeout=10000)
+        page.get_by_role("button", name="src/app.py").click()
+        expect(page.get_by_label("src/app.py")).to_contain_text("v2")
+        page.get_by_role("button", name="Revert").click()
+        page.get_by_role("button", name="src/app.py").click()
+        expect(page.get_by_label("src/app.py")).to_contain_text("v1", timeout=10000)
+    step("agents: approve writes file, revert restores it", agents_approve_revert)
+
+    def skills_flow():
+        import json as _j
+        page.get_by_role("button", name="Skills", exact=True).click()
+        page.get_by_label("Skill manifest JSON", exact=True).fill(_j.dumps(SKILL))
+        page.get_by_role("button", name="Stage manifest").click()
+        expect(page.get_by_text("Validation passed")).to_be_visible(timeout=10000)
+        expect(page.get_by_text("not approved")).to_be_visible()
+        page.get_by_role("button", name="Approve & activate").click()
+        expect(page.get_by_text("active 1.0.0")).to_be_visible(timeout=10000)
+        page.get_by_label("tidy-notes text", exact=True).fill("buy milk")
+        page.get_by_role("button", name="Run", exact=True).click()
+        expect(page.get_by_text("- skill output")).to_be_visible(timeout=10000)
+        page.get_by_role("button", name="Disable").click()
+        expect(page.get_by_text("disabled")).to_be_visible(timeout=10000)
+    step("skills: stage -> validate -> approve -> run -> disable", skills_flow)
+
+    def skills_blocked():
+        import json as _j
+        bad = dict(SKILL, name="net-skill", permissions={"network": True, "files": False, "use_memories": False})
+        page.get_by_label("Skill manifest JSON", exact=True).fill(_j.dumps(bad))
+        page.get_by_role("button", name="Stage manifest").click()
+        expect(page.get_by_text("Validation failed")).to_be_visible(timeout=10000)
+        expect(page.get_by_role("region", name="Skill net-skill").get_by_role("button", name="Approve & activate")).to_have_count(0)
+    step("skills: network-requesting skill cannot be approved", skills_blocked)
 
     def settings_theme():
         page.get_by_role("button", name="Settings", exact=True).click()
