@@ -18,7 +18,9 @@ from app.core.config import Settings, get_settings
 from app.models.base import ChatMessage, ProviderError, TokenUsage
 from app.security.auth import require_auth
 from app.services.context import build_context
+from app.api.search import run_search
 from app.services.memory import relevant_memories
+from app.services.search import SearchError
 
 router = APIRouter(dependencies=[Depends(require_auth)])
 DEFAULT_TITLE = "New conversation"
@@ -34,6 +36,7 @@ class Rename(BaseModel):
 
 class NewMessage(BaseModel):
     content: str = Field(min_length=1, max_length=8000)
+    use_search: bool = False
 
 
 def _row(r) -> dict:
@@ -133,11 +136,21 @@ async def send_message(
             yield _sse("error", {"kind": e.kind, "message": e.message, "saved_user_message": True})
             return
 
+        web: list[dict] = []
+        if body.use_search:
+            try:
+                web = await run_search(request, settings, body.content)
+                if not web:
+                    yield _sse("notice", {"kind": "no_results", "message": "Web search returned no results."})
+            except SearchError as e:
+                usage.record_error("search_" + e.kind)
+                yield _sse("notice", {"kind": e.kind, "message": e.message + " Answering without web results."})
+
         parts: list[str] = []
         token_usage: TokenUsage | None = None
         try:
             async for ev in provider.stream_chat(
-                build_context(history, settings.context_char_budget, memories), model, settings.ai_max_output_tokens
+                build_context(history, settings.context_char_budget, memories, web), model, settings.ai_max_output_tokens
             ):
                 if ev.usage:
                     token_usage = ev.usage
@@ -172,6 +185,6 @@ async def send_message(
             token_usage.prompt_tokens if token_usage else None,
             token_usage.completion_tokens if token_usage else None,
         )
-        yield _sse("done", {"message_id": msg_id, "model": model})
+        yield _sse("done", {"message_id": msg_id, "model": model, "sources": [{"title": r["title"], "url": r["url"]} for r in web]})
 
     return StreamingResponse(events(), media_type="text/event-stream", headers={"Cache-Control": "no-cache"})

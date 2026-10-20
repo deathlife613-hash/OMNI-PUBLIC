@@ -4,14 +4,19 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api import chat, health, memory, provider, system, tools
+from app.api import chat, health, memory, provider, search, system, tools
 from app.core import db
 from app.core.config import APP_VERSION, Settings, get_settings
 from app.models.base import Provider
+from app.services.search import SearchGuard, SearchProvider
 from app.services.usage import UsageTracker
 
 
-def create_app(settings: Settings | None = None, provider_override: Provider | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    provider_override: Provider | None = None,
+    search_override: SearchProvider | None = None,
+) -> FastAPI:
     """Build the app. Passing settings/provider explicitly keeps tests isolated."""
     settings = settings or get_settings()
 
@@ -25,6 +30,8 @@ def create_app(settings: Settings | None = None, provider_override: Provider | N
     app.state.provider = provider_override
     app.state.provider_state = None  # result of the last "Test connection", None = never tested
     app.state.usage = UsageTracker()
+    app.state.search_provider = search_override
+    app.state.search_guard = SearchGuard()
 
     app.add_middleware(
         CORSMiddleware,
@@ -39,6 +46,7 @@ def create_app(settings: Settings | None = None, provider_override: Provider | N
     app.include_router(chat.router, prefix="/api")
     app.include_router(memory.router, prefix="/api")
     app.include_router(tools.router, prefix="/api")
+    app.include_router(search.router, prefix="/api")
 
     # Single-container deployment: serve the built frontend when present.
     if settings.frontend_dist.is_dir():

@@ -6,7 +6,7 @@ from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-APP_VERSION = "0.3.0"
+APP_VERSION = "0.4.0"
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 
 
@@ -32,6 +32,14 @@ class Settings(BaseSettings):
     ai_timeout_s: float = 60
     ai_max_retries: int = 2  # timeouts/5xx only; never for 429
     context_char_budget: int = 12000
+
+    # Web search (optional). "" = disabled. tavily | searxng
+    search_provider: str = ""
+    search_api_key: str = Field(default="", repr=False)
+    search_base_url: str = ""  # for searxng
+    search_max_results: int = 5
+    search_cache_ttl_s: float = 3600
+    search_daily_cap: int = 30  # own guard: Tavily free = 1,000 credits/month
 
     # Folder OMNI may search/read (read-only, .txt/.md/.csv). Empty = document tools disabled.
     docs_dir: Path | None = None

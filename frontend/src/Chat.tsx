@@ -15,6 +15,7 @@ import {
   type LastTest,
   type ModelEntry,
   type Msg,
+  type Source,
   type StreamError,
   type SystemStatus,
 } from "./api";
@@ -35,6 +36,9 @@ export default function Chat({ status, onStatusChange }: Props) {
   const [models, setModels] = useState<ModelEntry[] | null>(null);
   const [test, setTest] = useState<LastTest | null>(null);
   const [info, setInfo] = useState("");
+  const [useSearch, setUseSearch] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [sources, setSources] = useState<Source[]>([]);
   const [prefs, setPrefs] = useState<VoicePrefs>(loadPrefs);
   const abortRef = useRef<AbortController | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
@@ -105,6 +109,8 @@ export default function Chat({ status, onStatusChange }: Props) {
     }
     setDraft("");
     setError(null);
+    setNotice("");
+    setSources([]);
     setPartial("");
     setStreaming(true);
     setMessages((m) => [...m, { id: -Date.now(), role: "user", content: text, created_at: "" }]);
@@ -119,6 +125,7 @@ export default function Chat({ status, onStatusChange }: Props) {
         setPartial((p) => p + d);
       },
       ctrl.signal,
+      { useSearch, onNotice: setNotice, onSources: setSources },
     );
     abortRef.current = null;
     setStreaming(false);
@@ -253,6 +260,24 @@ export default function Chat({ status, onStatusChange }: Props) {
               <div className="text">{partial}</div>
             </div>
           )}
+          {notice && (
+            <p role="status" className="muted">
+              {notice}
+            </p>
+          )}
+          {sources.length > 0 && (
+            <p className="muted">
+              Sources:{" "}
+              {sources.map((s, i) => (
+                <span key={s.url}>
+                  {i > 0 && " · "}
+                  <a href={s.url} target="_blank" rel="noopener noreferrer">
+                    {s.title || s.url}
+                  </a>
+                </span>
+              ))}
+            </p>
+          )}
           {error && (
             <p role="alert" className="banner">
               {error.message}
@@ -262,6 +287,15 @@ export default function Chat({ status, onStatusChange }: Props) {
           <div ref={endRef} />
         </div>
 
+        <label className="row">
+          <input
+            type="checkbox"
+            style={{ width: "auto", margin: 0 }}
+            checked={useSearch}
+            onChange={(e) => setUseSearch(e.target.checked)}
+          />
+          Search the web for this message (uses your free search allowance)
+        </label>
         <VoiceBar prefs={prefs} onPrefs={setPrefs} onTranscript={setDraft} />
         <form onSubmit={(e) => void send(e)} className="composer">
           <textarea

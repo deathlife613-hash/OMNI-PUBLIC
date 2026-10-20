@@ -67,3 +67,24 @@ Repo structure · env config (`core/config.py`) · SQLite + versioned migrations
 | Memory effect on a real model's answers | NOT TESTED (needs Groq key) |
 
 **Limits:** retrieval is keyword-based (no embeddings); conversation summarization not built yet.
+
+## Phase 4 — Voice (2026-10-20)
+Browser-native speech input/output as a separate module (`frontend/src/voice/`): mic button with recording status, Done/Cancel, editable transcript (never auto-sent), permission/device error messages, read-replies-aloud toggle, voice picker, speed, stop, long replies read in sentence-aligned sections, code blocks skipped.
+
+| Check | Result |
+|---|---|
+| Pure logic tests (chunking, error messages), vitest, 7 tests on Colab | PASS |
+| TypeScript + build | PASS |
+| Real microphone / speech synthesis in a browser | NOT TESTED (needs a real browser with mic; support varies; some browsers send audio to the vendor) |
+| Wake word | NOT IMPLEMENTED (optional; deferred) |
+| Local Whisper | NOT IMPLEMENTED |
+
+## Phase 5 — Tools (2026-10-20)
+Tool registry with Pydantic schemas, timeouts, `needs_confirmation` (delete requires `confirm=true`), audit log (tool + outcome only). Tools: calculator (AST whitelist, no eval), date/time, tasks, reminders (shown while the app is open; no background push), notes, authorized document search/read (read-only, `OMNI_DOCS_DIR`, blocks traversal/symlinks/secret-named files/other types). Tools tab UI.
+
+| Check | Result |
+|---|---|
+| Backend tests: 70 total (27 new for tools) on Colab | PASS |
+| Tools UI in a real browser | NOT TESTED |
+| Model-driven tool calling from chat | NOT IMPLEMENTED (tools are user-invoked) |
+| Health/model-check/export tools | export + provider test exist as endpoints, not registry tools |

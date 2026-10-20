@@ -133,6 +133,11 @@ export const fetchModels = () => request<{ models: ModelEntry[] }>("/api/provide
 export const selectModel = (model: string) => request<{ model: string }>("/api/provider/model", "PUT", { model });
 export const testProvider = () => request<LastTest>("/api/provider/test", "POST");
 
+export interface Source {
+  title: string;
+  url: string;
+}
+
 export interface StreamError {
   kind: string;
   message: string;
@@ -146,13 +151,14 @@ export async function streamMessage(
   content: string,
   onDelta: (text: string) => void,
   signal?: AbortSignal,
+  opts: { useSearch?: boolean; onNotice?: (m: string) => void; onSources?: (s: Source[]) => void } = {},
 ): Promise<StreamError | null> {
   let res: Response;
   try {
     res = await fetch(`${BASE}/api/conversations/${conversationId}/messages`, {
       method: "POST",
       headers: headers(true),
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ content, use_search: !!opts.useSearch }),
       signal,
     });
   } catch {
@@ -179,6 +185,8 @@ export async function streamMessage(
         if (!ev || !raw) continue;
         const data = JSON.parse(raw);
         if (ev === "delta") onDelta(data.text as string);
+        else if (ev === "notice") opts.onNotice?.(data.message as string);
+        else if (ev === "done") opts.onSources?.((data.sources ?? []) as Source[]);
         else if (ev === "error") return data as StreamError;
       }
     }

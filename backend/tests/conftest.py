@@ -6,6 +6,21 @@ from app.core.config import Settings
 from app.main import create_app
 from app.models.base import ModelInfo, Provider, StreamEvent
 from app.security.auth import reset_throttle
+from app.services.search import SearchProvider, SearchResult
+
+
+class FakeSearch(SearchProvider):
+    name = "fakesearch"
+
+    def __init__(self, results=None, error=None):
+        self.results = results if results is not None else [SearchResult("Title A", "https://a.example/x", "Snippet A")]
+        self.error, self.calls = error, 0
+
+    async def search(self, query, limit):
+        self.calls += 1
+        if self.error:
+            raise self.error
+        return self.results
 
 
 class FakeProvider(Provider):
@@ -35,7 +50,7 @@ def make_client(tmp_path):
     """Factory: make_client(provider=FakeProvider(), env="production", ...) -> TestClient."""
     reset_throttle()
 
-    def _make(provider=None, **overrides) -> TestClient:
+    def _make(provider=None, search=None, **overrides) -> TestClient:
         base = dict(
             env="development",
             db_path=tmp_path / "test.db",
@@ -46,6 +61,6 @@ def make_client(tmp_path):
         base.update(overrides)
         settings = Settings(_env_file=None, **base)
         db.init_db(settings.db_path)  # TestClient without `with` skips the lifespan hook
-        return TestClient(create_app(settings, provider_override=provider))
+        return TestClient(create_app(settings, provider_override=provider, search_override=search))
 
     return _make
