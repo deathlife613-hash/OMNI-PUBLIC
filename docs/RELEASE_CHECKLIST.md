@@ -53,7 +53,7 @@ Chromium). **NOT TESTED** = never executed. **NOT IMPLEMENTED** = not built. Not
 ### Quality
 | Criterion | Result |
 |---|---|
-| Automated tests run successfully | PASS (backend + frontend unit + 16+ browser e2e steps; counts in PROJECT_STATUS.md) |
+| Automated tests run successfully | PASS (153 backend, 7 frontend unit, 19 browser e2e steps) |
 | Failures logged safely | PASS (audit log has no arguments/secrets) |
 | No fake success messages | PASS to the extent tested; unavailable metrics shown as unavailable |
 | README has complete setup guide | PASS |

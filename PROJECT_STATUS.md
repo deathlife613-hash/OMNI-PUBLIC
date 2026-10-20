@@ -124,4 +124,5 @@ Sequential manager→role steps on ONE model with checkpoints in SQLite; limits 
 Declarative skills only (prompt template + input schema + declared permissions + deterministic tests + changelog + provenance). Lifecycle: propose/draft → staged (validated + tests auto-run) → optional AI review (advisory) → human activation with explicit confirm → run → disable/enable/rollback/reject. New skills inactive; failed validation cannot be activated; permission expansion needs extra explicit approval; versions only increase; no endpoint touches security rules/model router/logging; all actions audited. No code-executing skills (no sandbox).
 
 ## Phase 11 — Hardening (2026-10-20)
+**Verified on Colab: backend 153 passed; frontend tsc OK, build OK, 7 vitest passed; real-browser e2e 19/19 PASS (incl. Agents + Skills UI, under CSP).**
 Added: security headers + CSP on pages, `no-store` on API, OMNI's own model-request limiter (`OMNI_MODEL_RPM_LIMIT`, default 20/min; covers chat, agent runs, skill draft/review/run; unauthenticated requests don't consume it). Release checklist: `docs/RELEASE_CHECKLIST.md`. E2E extended to Agents + Skills flows.
