@@ -29,7 +29,7 @@ with sync_playwright() as p:
 
     def chat():
         page.get_by_role("button", name="Chat", exact=True).click()
-        page.get_by_label("Message").fill("hello omni")
+        page.get_by_label("Message", exact=True).fill("hello omni")
         page.get_by_role("button", name="Send").click()
         expect(page.locator(".bubble.assistant .text").first).to_have_text("Hello from OMNI", timeout=10000)
         expect(page.locator(".bubble.user .text").first).to_have_text("hello omni")
@@ -37,7 +37,7 @@ with sync_playwright() as p:
 
     def chat_search():
         page.get_by_label("Search the web for this message", exact=False).check()
-        page.get_by_label("Message").fill("news")
+        page.get_by_label("Message", exact=True).fill("news")
         page.get_by_role("button", name="Send").click()
         expect(page.get_by_role("link", name="Title A")).to_be_visible(timeout=10000)
     step("chat: web search shows source link", chat_search)
@@ -47,23 +47,23 @@ with sync_playwright() as p:
 
     def memory():
         page.get_by_role("button", name="Memory", exact=True).click()
-        page.get_by_label("New memory").fill("My cat is named Pixel")
+        page.get_by_label("New memory", exact=True).fill("My cat is named Pixel")
         page.get_by_role("button", name="Add", exact=True).click()
         expect(page.get_by_text("My cat is named Pixel")).to_be_visible(timeout=5000)
     step("memory: add and list", memory)
 
     def memory_secret():
-        page.get_by_label("New memory").fill("password: hunter2")
+        page.get_by_label("New memory", exact=True).fill("password: hunter2")
         page.get_by_role("button", name="Add", exact=True).click()
         expect(page.get_by_role("alert")).to_contain_text("never stores secrets", timeout=5000)
     step("memory: secret refused with clear message", memory_secret)
 
     def tools():
         page.get_by_role("button", name="Tools", exact=True).click()
-        page.get_by_label("Expression").fill("2+3*4")
+        page.get_by_label("Expression", exact=True).fill("2+3*4")
         page.get_by_role("button", name="=").click()
         expect(page.get_by_role("status").filter(has_text="14")).to_be_visible(timeout=5000)
-        page.get_by_label("Task title").fill("Pay rent")
+        page.get_by_label("Task title", exact=True).fill("Pay rent")
         page.get_by_role("button", name="Add", exact=True).click()
         expect(page.get_by_text("Pay rent")).to_be_visible(timeout=5000)
     step("tools: calculator and task", tools)
@@ -75,7 +75,7 @@ with sync_playwright() as p:
 
     def settings_theme():
         page.get_by_role("button", name="Settings", exact=True).click()
-        page.get_by_label("Theme").select_option("light")
+        page.get_by_label("Theme", exact=True).select_option("light")
         assert page.evaluate("document.documentElement.dataset.theme") == "light"
     step("settings: theme switch", settings_theme)
     step("settings: security shows token state", lambda: expect(page.get_by_text("Not required (development only)")).to_be_visible())
