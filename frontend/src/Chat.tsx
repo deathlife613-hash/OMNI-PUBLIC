@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import {
   createConversation,
+  createMemory,
   deleteConversation,
   fetchModels,
   getConversation,
@@ -212,9 +213,24 @@ export default function Chat({ status, onStatusChange }: Props) {
               <div className="who">{m.role === "user" ? "You" : "OMNI"}</div>
               <div className="text">{m.content}</div>
               {m.role === "assistant" && (
-                <button className="link small" onClick={() => void navigator.clipboard?.writeText(m.content)}>
-                  Copy
-                </button>
+                <>
+                  <button className="link small" onClick={() => void navigator.clipboard?.writeText(m.content)}>
+                    Copy
+                  </button>
+                  <button
+                    className="link small"
+                    onClick={() => {
+                      const v = window.prompt("Save to memory (edit first if you like):", m.content.slice(0, 500));
+                      if (v && v.trim())
+                        createMemory(v.trim()).then(
+                          () => setInfo("Saved to memory."),
+                          (e) => setInfo(e instanceof Error ? e.message : "Could not save."),
+                        );
+                    }}
+                  >
+                    Remember
+                  </button>
+                </>
               )}
             </div>
           ))}

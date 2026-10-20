@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import Chat from "./Chat";
+import MemoryCenter from "./Memory";
 import { ApiError, fetchHealth, fetchStatus, setToken, type SystemStatus } from "./api";
 
 type Conn = "checking" | "online" | "offline" | "locked";
@@ -63,7 +64,7 @@ export default function App() {
   const [conn, setConn] = useState<Conn>("checking");
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [error, setError] = useState("");
-  const [view, setView] = useState<"dashboard" | "chat">("dashboard");
+  const [view, setView] = useState<"dashboard" | "chat" | "memory">("dashboard");
 
   const refresh = useCallback(async () => {
     try {
@@ -120,6 +121,9 @@ export default function App() {
           <button className={view === "chat" ? "on" : ""} onClick={() => setView("chat")}>
             Chat
           </button>
+          <button className={view === "memory" ? "on" : ""} onClick={() => setView("memory")}>
+            Memory
+          </button>
         </nav>
         <div className={`pill ${conn}`} role="status">
           {conn === "online" ? "Backend connected" : conn === "checking" ? "Connecting…" : "Backend offline"}
@@ -134,6 +138,8 @@ export default function App() {
 
       {view === "chat" ? (
         <Chat status={status} onStatusChange={() => void refresh()} />
+      ) : view === "memory" ? (
+        <MemoryCenter />
       ) : (
       <main className="grid">
         <Card title="System">

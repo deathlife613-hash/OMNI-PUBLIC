@@ -188,3 +188,36 @@ export async function streamMessage(
   }
   return null;
 }
+
+export interface Memory {
+  id: number;
+  kind: "fact" | "preference";
+  content: string;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+export interface Note {
+  id: number;
+  title: string;
+  body: string;
+  updated_at: string;
+}
+const qs = (q: string) => (q.trim() ? `?q=${encodeURIComponent(q.trim())}` : "");
+export const listMemories = (q = "") => request<Memory[]>(`/api/memories${qs(q)}`);
+export const createMemory = (content: string, kind: Memory["kind"] = "fact") =>
+  request<Memory>("/api/memories", "POST", { content, kind });
+export const patchMemory = (id: number, patch: Partial<Pick<Memory, "content" | "kind" | "enabled">>) =>
+  request<Memory>(`/api/memories/${id}`, "PATCH", patch);
+export const deleteMemory = (id: number) => request<void>(`/api/memories/${id}`, "DELETE");
+export const getMemorySettings = () => request<{ enabled: boolean }>("/api/memory/settings");
+export const putMemorySettings = (enabled: boolean) =>
+  request<{ enabled: boolean }>("/api/memory/settings", "PUT", { enabled });
+export const listNotes = (q = "") => request<Note[]>(`/api/notes${qs(q)}`);
+export const createNote = (title: string, body: string) => request<Note>("/api/notes", "POST", { title, body });
+export const patchNote = (id: number, patch: Partial<Pick<Note, "title" | "body">>) =>
+  request<Note>(`/api/notes/${id}`, "PATCH", patch);
+export const deleteNote = (id: number) => request<void>(`/api/notes/${id}`, "DELETE");
+export const exportAll = () => request<Record<string, unknown>>("/api/export");
+export const restoreBackup = (backup: Record<string, unknown>) =>
+  request<{ restored: Record<string, number> }>("/api/restore", "POST", { confirm: true, backup });

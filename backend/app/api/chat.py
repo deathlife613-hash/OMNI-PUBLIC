@@ -18,6 +18,7 @@ from app.core.config import Settings, get_settings
 from app.models.base import ChatMessage, ProviderError, TokenUsage
 from app.security.auth import require_auth
 from app.services.context import build_context
+from app.services.memory import relevant_memories
 
 router = APIRouter(dependencies=[Depends(require_auth)])
 DEFAULT_TITLE = "New conversation"
@@ -113,6 +114,10 @@ async def send_message(
         rows = conn.execute(
             "SELECT role, content FROM messages WHERE conversation_id = ? ORDER BY id", (conv_id,)
         ).fetchall()
+        mem_on = conn.execute("SELECT value FROM meta WHERE key = 'memory_enabled'").fetchone()
+        memories = (
+            relevant_memories(conn, body.content) if (mem_on is None or mem_on["value"] == "1") else []
+        )
     history = [ChatMessage(r["role"], r["content"]) for r in rows if r["role"] in ("user", "assistant")]
     usage = request.app.state.usage
 
@@ -132,7 +137,7 @@ async def send_message(
         token_usage: TokenUsage | None = None
         try:
             async for ev in provider.stream_chat(
-                build_context(history, settings.context_char_budget), model, settings.ai_max_output_tokens
+                build_context(history, settings.context_char_budget, memories), model, settings.ai_max_output_tokens
             ):
                 if ev.usage:
                     token_usage = ev.usage

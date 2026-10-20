@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api import chat, health, provider, system
+from app.api import chat, health, memory, provider, system
 from app.core import db
 from app.core.config import APP_VERSION, Settings, get_settings
 from app.models.base import Provider
@@ -37,6 +37,7 @@ def create_app(settings: Settings | None = None, provider_override: Provider | N
     app.include_router(system.router, prefix="/api")
     app.include_router(provider.router, prefix="/api")
     app.include_router(chat.router, prefix="/api")
+    app.include_router(memory.router, prefix="/api")
 
     # Single-container deployment: serve the built frontend when present.
     if settings.frontend_dist.is_dir():
