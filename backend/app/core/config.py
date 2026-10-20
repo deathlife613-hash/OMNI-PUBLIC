@@ -1,0 +1,43 @@
+"""Environment-driven configuration. Secrets live here only; they are never
+returned by any API route (see api/system.py, which exposes booleans only)."""
+from functools import lru_cache
+from pathlib import Path
+
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+APP_VERSION = "0.1.0"
+BACKEND_DIR = Path(__file__).resolve().parents[2]
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_prefix="OMNI_", env_file=(".env", "../.env"), extra="ignore"
+    )
+
+    env: str = "development"  # "development" | "production"
+    db_path: Path = BACKEND_DIR / "data" / "omni.db"
+    # Single-owner access token. Required in production.
+    access_token: str = Field(default="", repr=False)
+    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    frontend_dist: Path = BACKEND_DIR.parent / "frontend" / "dist"
+
+    # AI provider (wired up in Phase 2; Phase 1 only reports configuration state).
+    ai_provider: str = "groq"
+    ai_model: str = ""  # chosen after the model list is verified in Phase 2
+    ai_base_url: str = ""
+    ai_api_key: str = Field(default="", repr=False)
+    allow_paid_providers: bool = False  # hard guard; never flipped automatically
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def is_production(self) -> bool:
+        return self.env.lower() == "production"
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()

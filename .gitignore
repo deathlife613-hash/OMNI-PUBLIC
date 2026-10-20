@@ -1,0 +1,27 @@
+# secrets & local config
+.env
+.env.*
+!.env.example
+
+# data
+backend/data/*
+!backend/data/.gitkeep
+*.db
+*.db-wal
+*.db-shm
+backups/
+
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# node
+node_modules/
+frontend/dist/
+
+# os/editor
+.DS_Store
+.idea/
+.vscode/

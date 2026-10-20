@@ -1,0 +1,15 @@
+# NOT YET TESTED. Usage: copy .env.example to .env, set OMNI_ACCESS_TOKEN, then `docker compose up --build`.
+services:
+  omni:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      OMNI_ENV: production
+      OMNI_DB_PATH: /data/omni.db
+    volumes:
+      - omni-data:/data
+    restart: unless-stopped
+volumes:
+  omni-data:
