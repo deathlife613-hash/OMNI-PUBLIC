@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api import chat, health, memory, provider, search, system, tools
+from app.api import agents, chat, health, memory, provider, search, system, tools
 from app.core import db
 from app.core.config import APP_VERSION, Settings, get_settings
 from app.models.base import Provider
@@ -47,6 +47,7 @@ def create_app(
     app.include_router(memory.router, prefix="/api")
     app.include_router(tools.router, prefix="/api")
     app.include_router(search.router, prefix="/api")
+    app.include_router(agents.router, prefix="/api")
 
     # Single-container deployment: serve the built frontend when present.
     if settings.frontend_dist.is_dir():

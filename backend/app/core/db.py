@@ -72,6 +72,43 @@ MIGRATIONS: list[tuple[int, str]] = [
         );
         """,
     ),
+    (
+        4,
+        """
+        CREATE TABLE agent_tasks (
+            id TEXT PRIMARY KEY,
+            goal TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'queued' CHECK (status IN
+                ('queued','running','waiting_approval','succeeded','failed','cancelled','paused','paused_quota')),
+            model_calls INTEGER NOT NULL DEFAULT 0,
+            cancel_requested INTEGER NOT NULL DEFAULT 0,
+            error TEXT,
+            summary TEXT,
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+            updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+        );
+        CREATE TABLE agent_steps (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            task_id TEXT NOT NULL REFERENCES agent_tasks(id) ON DELETE CASCADE,
+            idx INTEGER NOT NULL,
+            role TEXT NOT NULL,
+            instruction TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'queued' CHECK (status IN ('queued','running','succeeded','failed')),
+            output TEXT,
+            sources TEXT
+        );
+        CREATE TABLE agent_approvals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            task_id TEXT NOT NULL REFERENCES agent_tasks(id) ON DELETE CASCADE,
+            path TEXT NOT NULL,
+            base_content TEXT,
+            new_content TEXT NOT NULL,
+            diff TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected','applied','reverted')),
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+        );
+        """,
+    ),
 ]
 
 

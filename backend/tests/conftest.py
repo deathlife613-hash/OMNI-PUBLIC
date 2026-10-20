@@ -23,6 +23,25 @@ class FakeSearch(SearchProvider):
         return self.results
 
 
+class ScriptedProvider(Provider):
+    """Returns one scripted response per model call (a str, or a ProviderError to raise)."""
+
+    name = "scripted"
+
+    def __init__(self, responses):
+        self.responses, self.calls = list(responses), []
+
+    async def list_models(self):
+        return [ModelInfo("m1", 8192)]
+
+    async def stream_chat(self, messages, model, max_tokens):
+        self.calls.append(messages)
+        r = self.responses.pop(0) if self.responses else "(no more scripted responses)"
+        if isinstance(r, Exception):
+            raise r
+        yield StreamEvent(delta=r)
+
+
 class FakeProvider(Provider):
     """Scriptable provider: yields `chunks`, then raises `error` if given."""
 

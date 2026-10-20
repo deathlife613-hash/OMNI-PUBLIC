@@ -106,3 +106,7 @@ Dashboard: quick actions, AI/connection, measured usage (since restart; tokens o
 | Any UI in a real browser | NOT TESTED |
 | Docker build, compose, Caddy, any real deployment | NOT TESTED |
 | Hosted DB (Supabase/Firebase) backend | NOT IMPLEMENTED |
+
+## End-to-end UI test (2026-10-20, Google Colab)
+Real `uvicorn` server + built frontend + headless Chromium (Playwright), scripted fake model/search (no keys, no network): **16/16 PASS** — dashboard connected/usage, chat send + streamed reply + sidebar, web-search source link, test connection, memory add + secret refusal, tools calculator/task/delete-with-confirmation, theme switch, security/audit, backup download, mobile width (no overflow), no uncaught page errors. Run: `backend/e2e/ui_test.py` against `backend/e2e/server.py`.
+Still NOT TESTED: a real hosted model, real microphone/speech, Docker, real deployment.

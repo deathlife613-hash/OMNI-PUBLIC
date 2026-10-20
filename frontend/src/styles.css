@@ -108,3 +108,6 @@ li.off { opacity: 0.5; }
 :root[data-theme="light"] .tabs button.on { color: #fff; }
 .tabs { flex-wrap: wrap; }
 a { color: var(--accent); }
+
+pre.diff { background: #09101a; border: 1px solid var(--line); border-radius: 8px; padding: 10px; overflow: auto; max-height: 280px; font-size: 12px; white-space: pre; }
+:root[data-theme="light"] pre.diff { background: #f4f7fb; }

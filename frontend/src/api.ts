@@ -266,3 +266,43 @@ export interface AuditEntry {
 export const fetchUsage = () => request<Usage>("/api/usage");
 export const fetchSearchStatus = () => request<SearchStatus>("/api/search/status");
 export const fetchAudit = () => request<AuditEntry[]>("/api/audit");
+
+export interface AgentStep { idx: number; role: string; instruction: string; status: string; output: string | null; sources: string | null }
+export interface AgentApproval { id: number; task_id?: string; path: string; diff: string; status: string }
+export interface AgentTask {
+  id: string; goal: string; status: string; model_calls: number; error: string | null; summary: string | null;
+  steps?: AgentStep[]; approvals?: AgentApproval[];
+}
+export interface AgentLimits { execution: string; max_steps: number; max_model_calls: number; max_seconds_per_run: number; workspace_configured: boolean; roles: string[]; not_enabled: string[]; command_execution: boolean }
+export const agentLimits = () => request<AgentLimits>("/api/agents/limits");
+export const listAgentTasks = () => request<AgentTask[]>("/api/agents/tasks");
+export const getAgentTask = (id: string) => request<AgentTask>(`/api/agents/tasks/${id}`);
+export const createAgentTask = (goal: string) => request<AgentTask>("/api/agents/tasks", "POST", { goal });
+export const cancelAgentTask = (id: string) => request<unknown>(`/api/agents/tasks/${id}/cancel`, "POST");
+export const deleteAgentTask = (id: string) => request<void>(`/api/agents/tasks/${id}`, "DELETE");
+export const pendingApprovals = () => request<AgentApproval[]>("/api/agents/approvals");
+export const decideApproval = (id: number, action: "approve" | "reject" | "revert") => request<unknown>(`/api/agents/approvals/${id}/${action}`, "POST");
+export const workspaceTree = () => request<{ files: string[] }>("/api/workspace/tree");
+export const workspaceFile = (path: string) => request<{ text: string }>(`/api/workspace/file?path=${encodeURIComponent(path)}`);
+
+/** Starts/resumes a task and reports progress; resolves when the stream ends. */
+export async function runAgentTask(id: string, onEvent: (event: string, data: Record<string, unknown>) => void): Promise<void> {
+  const res = await fetch(`${BASE}/api/agents/tasks/${id}/run`, { method: "POST", headers: headers(false) });
+  if (!res.ok || !res.body) throw await toError(res);
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    let i: number;
+    while ((i = buf.indexOf("\n\n")) >= 0) {
+      const block = buf.slice(0, i);
+      buf = buf.slice(i + 2);
+      const ev = /^event: (.*)$/m.exec(block)?.[1];
+      const raw = /^data: (.*)$/m.exec(block)?.[1];
+      if (ev && raw) onEvent(ev, JSON.parse(raw));
+    }
+  }
+}

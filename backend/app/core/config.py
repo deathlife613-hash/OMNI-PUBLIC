@@ -6,7 +6,7 @@ from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-APP_VERSION = "0.4.0"
+APP_VERSION = "0.5.0"
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 
 
@@ -32,6 +32,14 @@ class Settings(BaseSettings):
     ai_timeout_s: float = 60
     ai_max_retries: int = 2  # timeouts/5xx only; never for 429
     context_char_budget: int = 12000
+
+    # Agents & coding workspace (Phase 9). Workspace = a folder OMNI may read; edits need your approval.
+    workspace_dir: Path | None = None
+    workspace_max_file_bytes: int = 200_000
+    agent_max_steps: int = 6
+    agent_max_model_calls: int = 12
+    agent_max_seconds: float = 300
+    agent_step_output_chars: int = 4000
 
     # Web search (optional). "" = disabled. tavily | searxng
     search_provider: str = ""
