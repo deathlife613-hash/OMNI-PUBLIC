@@ -174,3 +174,6 @@ Rules from the owner: `OMNI_DATABASE_URL` flag, SQLite stays default and unchang
 - Remaining for Postgres sign-off: real Neon run (Sebastian creates the account; `OMNI_DATABASE_URL` as a host env var only).
 ### E2E note
 - Isolated `--only agents` / `--only skills` runs in the fresh clone were confounded: `frontend/dist` was not built, so the page returned `{"detail":"Not Found"}` while APIs returned 200. They say nothing about the UI or selectors. Re-run with the frontend built is pending; no UI-duplication theory until then. Lesson: e2e preflight should fail fast if `/` isn't the app.
+
+## UI redesign (holographic OMNI core) - WRITTEN, NOT VERIFIED
+Commits: 7b8223f (theme tokens) -> 773e952 (OmniCore canvas orb + header) -> 4cf77a9 (dashboard hero + magenta grid, chat empty state, glow accents). Restyle only: no labels/roles/names changed; the orb and hero are `aria-hidden` and contain no text or roles (so `get_by_role("status").first` is still the connection pill). Orb is hand-rolled canvas, ~30 fps cap, paused when tab hidden, static frame under `prefers-reduced-motion`; no new dependencies. Not run: `npm run build`/tsc (npm registry unreachable from my sandbox), vitest, E2E, screenshots. Needs Colab: build + 21/21 E2E + visual comparison to the reference.
