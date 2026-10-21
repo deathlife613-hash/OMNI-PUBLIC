@@ -82,6 +82,18 @@ export default function Settings({ status, go }: { status: SystemStatus | null; 
         <dl>
           <dt>Web search</dt>
           <dd>{integ?.search.configured ? `Enabled (${integ.search.provider ?? "custom"})` : "Not configured"}</dd>
+          <dt>Data persistence</dt>
+          <dd>
+            {integ?.sync?.configured
+              ? integ.sync.last_error
+                ? `Hugging Face sync problem: ${integ.sync.last_error}`
+                : integ.sync.last_success
+                  ? `Hugging Face sync OK (last ${new Date(integ.sync.last_success).toLocaleString()})`
+                  : "Hugging Face sync enabled (no snapshot pushed yet)"
+              : integ?.sync?.last_error
+                ? `Sync misconfigured: ${integ.sync.last_error}`
+                : "Local disk only (lost on hosts with an ephemeral disk)"}
+          </dd>
           <dt>Documents folder</dt>
           <dd>{integ?.documents.enabled ? "Enabled (read-only)" : "Not configured"}</dd>
         </dl>
@@ -97,7 +109,13 @@ export default function Settings({ status, go }: { status: SystemStatus | null; 
         <h2>Security</h2>
         <dl>
           <dt>Access token</dt>
-          <dd>{status?.auth.token_required ? "Required" : "Not required (development only)"}</dd>
+          <dd>
+            {status?.auth.token_required
+              ? "Required"
+              : status?.auth.open_access
+                ? "OPEN ACCESS: no login. Anyone with this URL can use your model quota and read or replace your data."
+                : "Not required (development only)"}
+          </dd>
           <dt>Environment</dt>
           <dd>{status?.environment ?? "—"}</dd>
         </dl>

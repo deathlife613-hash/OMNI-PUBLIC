@@ -140,3 +140,11 @@ Next: plan-JSON reliability test of agents with gpt-oss-120b; filter non-chat mo
 - Live agent task on gpt-oss-120b: 5 steps (research, planning, documentation, review, documentation) succeeded with real output. Single run; reliability across many runs untested.
 - Demo instance: Colab + cloudflared, production mode, token auth. Ephemeral — data lost on runtime reset; back up regularly.
 Remaining: permanent deployment (Oracle, owner must complete card verification), Docker build/compose, voice with a real mic, Ollama/HF adapters, wake word, xAI key revocation (owner).
+
+
+## Work order 2026-10-20 night (code written, awaiting Colab run)
+Added: Ollama + Hugging Face adapters (OpenAI-compatible; non-chat filter applies), `auto` no-signup search (DuckDuckGo scrape -> Wikipedia API; now the default; tests set `search_provider=""`), HF-Dataset persistence sync (`app/services/sync.py`), `OMNI_ALLOW_OPEN_ACCESS`, Settings shows sync + open-access state, `.dockerignore`, compose/Render fixes, docs (DEPLOYMENT, FREE_SERVICES_RESEARCH, VOICE_VERIFICATION).
+Expected backend tests after this commit: previous 155 + new (registry 7, search 5, sync 10). **Not yet run.**
+Blocked routes (payment walls): HF Docker Spaces (paid plan), Oracle (card), Koyeb (card pre-auth reported).
+Docker - cannot be verified without a Docker host: image builds (npm install, vite build, pip install), container start as non-root with `/data` volume ownership, HEALTHCHECK, compose `env_file.required` syntax (needs Compose >= 2.24), Caddy certificate issuance and streaming (`flush_interval -1`) through the proxy, and Render's acceptance of the Docker free plan.
+Needs from owner: Render account (check for a card prompt), private HF dataset + fine-grained token, Groq key as a Render env var, an HF token must never be pasted in chat.

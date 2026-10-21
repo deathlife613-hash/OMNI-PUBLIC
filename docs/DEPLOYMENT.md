@@ -16,10 +16,36 @@ backend calls with a key you provide. Your browser only talks to OMNI; keys neve
 |---|---|---|---|
 | **A. Free always-on VM with a persistent disk** (e.g. Oracle Cloud Always Free — verify current terms; capacity is often unavailable) + `docker-compose.vm.yml` | Yes | Oracle requires one (verify) | Best match for the design |
 | **B. Your own computer + a free tunnel** (e.g. Cloudflare Tunnel) | Yes (your disk) | No | Works only while the computer is on; needs software installed there |
-| **C. Render free web service** | **No** (ephemeral, sleeps after ~15 min idle) | No | Demo only. Download a backup before closing the tab. `render.yaml` is for trying it out, not for keeping data |
+| **C. Render free web service** | **Disk is ephemeral**; with OMNI's HF-Dataset sync, data survives restarts (see below) | Unverified | Best no-card candidate; sleeps after ~15 min idle; not production-grade per Render |
 | Supabase / Firebase | Yes | varies | Needs a new storage layer (not built). Supabase free pauses after ~7 days idle |
 
 See `docs/FREE_SERVICES_RESEARCH.md` for sources and dates. Re-check every plan before relying on it; free tiers change.
+
+## No-card, always-reachable home: Render free + Hugging Face Dataset sync (recommended for $0)
+Checked 2026-10-20 from official docs unless marked. **Not deployed or tested yet.**
+
+| Route | Verdict |
+|---|---|
+| **Render free web service (Docker) + OMNI's HF-Dataset sync** | Candidate. Free, 750 h/month, spins down after 15 min idle (~1 min cold start), **ephemeral disk** (official). Card requirement is **not stated in Render's docs; community posts are inconclusive - unverified.** If Render asks for a card at signup, stop. Render also calls free services unsuitable for production. Whether the free plan accepts Docker services was not stated on the page I read; secondary sources say yes. |
+| Hugging Face **Docker Spaces** | **BLOCKED: HF docs say Docker (and Gradio) Spaces need a paid plan to create.** Free = static Spaces only. Free CPU Space disk is also ephemeral. |
+| HF Storage Buckets as a mounted volume | Free to create, but the free allowance wasn't stated and it is only usable from an HF Space (paid for Docker). Not used. |
+| Oracle Always Free | **Card required** (official). Stopped on this route. |
+| Koyeb | Sources conflict on a card + $29 pre-authorisation. Not recommended. |
+| Colab + cloudflared tunnel | Works tonight with no card; runtime resets lose data; a demo, not a home. |
+
+### Persistence design (built, tests written, live run still needed)
+- OMNI snapshots its SQLite database as gzipped SQL and pushes it to a **private** HF Dataset repo every `OMNI_SYNC_INTERVAL_S` (default 120 s) **only if the data changed**, and once more on graceful shutdown (SIGTERM).
+- On boot, if there is **no local database** (always true after a Render restart), the latest snapshot is restored before the app starts. An existing local database is never overwritten.
+- Safety rails: refuses to run if the dataset is **public**; if the startup restore **fails** (HF down), pushes are **blocked** so an empty database cannot overwrite your saved data (restart once HF is back); snapshots over 8 MB are refused with an error; the token never appears in status or logs.
+- **What can still be lost:** edits made after the last successful push if the host kills the process without a graceful shutdown (up to ~2 minutes), and anything if you never configure sync. Status → Settings → Integrations shows the last success/error.
+- Setup you must do (account steps are yours): (1) huggingface.co → New Dataset → **Private**, e.g. `yourname/omni-data`. (2) Settings → Access Tokens → **fine-grained** token with write access to that one repo only. (3) In Render's dashboard set `OMNI_SYNC_PROVIDER=hf_dataset`, `OMNI_SYNC_HF_REPO`, `OMNI_SYNC_HF_TOKEN`, plus `OMNI_AI_API_KEY`. (4) New Blueprint from `render.yaml`. (5) Open the URL, Chat → Test connection.
+
+## Open access (no login) - the trade-off
+By default production **refuses to serve without `OMNI_ACCESS_TOKEN`**. If you want no login, set `OMNI_ALLOW_OPEN_ACCESS=true`. Be clear about what that means on a public URL:
+- Anyone who finds or is given the URL can spend **your** model quota (OMNI's own limiter caps model requests at 20/minute, which slows but does not stop abuse), search with your allowance, and **read or replace all your conversations, memories and notes** (restore overwrites everything).
+- A hidden URL is not security. Settings shows a red "OPEN ACCESS" notice while this mode is on.
+- Safer middle ground if you change your mind: set a short token and keep it in your phone's password manager. A token, when set, is always enforced, even with open access enabled.
+- Keep `OMNI_WORKSPACE_DIR` and `OMNI_DOCS_DIR` unset on an open instance.
 
 ## Option A: VM steps (you do the account steps; I can't sign in for you)
 1. Create the VM (Ubuntu), open ports 80/443, point a DNS A record at it.

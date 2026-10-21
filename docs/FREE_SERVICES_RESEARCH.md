@@ -59,3 +59,19 @@ OMNI never enables billing, buys credits, or routes to a paid provider on its ow
 | Tavily | Yes — "1,000 free API Credits every month" | "No credit card required" | **Used** (adapter `tavily`). Rate limits/commercial terms not stated on that page: verify before heavy use | https://docs.tavily.com/guides/api-credits |
 | Brave Search API | No free tier since Feb 2026; $5 monthly credit only with public attribution | Card required, billed after credit, no spending cap | **Excluded** (violates no-card/no-surprise-billing rule); per secondary report https://www.implicator.ai/brave-drops-free-search-api-tier-puts-all-developers-on-metered-billing.md | secondary source |
 | SearXNG | Free software; you host it | n/a | Adapter `searxng` (needs your own instance with JSON enabled) | https://docs.searxng.org |
+
+
+## Update 2026-10-20 (evening): adapters, hosting, persistence
+Sources fetched today are official docs unless marked; some pages were read through a summarizer, so quotes may be imperfect.
+
+| Item | Finding | Source |
+|---|---|---|
+| Ollama Cloud API | Base `https://ollama.com`, key from ollama.com/settings/keys, Bearer auth. OpenAI-compatible `/v1/chat/completions` (streaming) and `/v1/models` at `https://ollama.com/v1`; local server at `http://localhost:11434/v1/` (key ignored). | docs.ollama.com/cloud, docs.ollama.com/api/openai-compatibility |
+| Ollama free plan | $0 plan with a monthly starter usage amount on a smaller set of "starter" models, 1 concurrent request; buying credits unlocks all models. Card requirement at signup **not stated**. | ollama.com/pricing |
+| Hugging Face Inference Providers | Pricing page says free users have **no included credits** (PRO gets $2/month); pay-as-you-go needs credits purchased. **[conflict]** with the earlier note above ($0.10/month). Either way too small/not free. Router `https://router.huggingface.co/v1` is the commonly used OpenAI-compatible base (**not on the page I read; verify**). OMNI's adapter exists but a free account will get 402 "quota". | huggingface.co/docs/inference-providers/en/pricing |
+| HF Spaces | CPU Basic free (2 vCPU, 16 GB RAM, 50 GB disk **not persistent**); sleeps when idle. **Docker Spaces require a paid plan to create** -> blocked. Static Spaces free. Storage Buckets: free to create, free allowance unstated; persistence for Spaces only. | huggingface.co/docs/hub/spaces-overview, /spaces-storage, /storage-buckets |
+| Render free web service | Spins down after 15 min idle (~1 min wake), 750 h/month, **no persistent disk, SQLite lost on restart/redeploy**, no scaling/shell, "do not use for production". Card requirement not stated in docs; community posts inconclusive. | render.com/docs/free |
+| Other no-card container hosts (secondary: snapdeploy.dev 2026 comparison, **unverified**) | SnapDeploy (100 h/month, sleeps), Railway ($5 trial then $1/month credit, 0.5 GB volume - trial/credit, not permanent free), Back4App (stops after 60 min per deploy). Koyeb, Cloud Run, Azure Container Apps, AWS Lambda, Oracle: card required. | snapdeploy.dev blog |
+| Web search without signup | DuckDuckGo HTML endpoint (unofficial scrape; may block datacenter IPs) and Wikipedia's official MediaWiki API (free, no key, encyclopedia only). Public SearXNG instances were rejected as a default: they commonly disable JSON output and rate-limit. **Neither could be called from my sandbox (network allowlist): live behaviour NOT TESTED.** | en.wikipedia.org/w/api.php docs (not fetched); html.duckduckgo.com (blocked in sandbox) |
+
+Decision: recommended no-card route = Render free + HF private-Dataset sync. HF Docker Spaces and Oracle are ruled out by their payment walls.

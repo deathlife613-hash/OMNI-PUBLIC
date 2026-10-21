@@ -69,17 +69,18 @@ def make_client(tmp_path):
     """Factory: make_client(provider=FakeProvider(), env="production", ...) -> TestClient."""
     reset_throttle()
 
-    def _make(provider=None, search=None, **overrides) -> TestClient:
+    def _make(provider=None, search=None, sync_transport=None, **overrides) -> TestClient:
         base = dict(
             env="development",
             db_path=tmp_path / "test.db",
             access_token="",
             ai_api_key="",
             frontend_dist=tmp_path / "no-dist",
+        search_provider="",  # tests never touch the network; opt in with search=/search_provider=
         )
         base.update(overrides)
         settings = Settings(_env_file=None, **base)
         db.init_db(settings.db_path)  # TestClient without `with` skips the lifespan hook
-        return TestClient(create_app(settings, provider_override=provider, search_override=search))
+        return TestClient(create_app(settings, provider_override=provider, search_override=search, sync_transport=sync_transport))
 
     return _make

@@ -1,4 +1,4 @@
-# NOT YET BUILT OR TESTED (Docker unavailable in the authoring sandbox). See PROJECT_STATUS.md.
+# STATICALLY REVIEWED ONLY - never built (no Docker in the authoring/Colab environments). See docs/RELEASE_CHECKLIST.md.
 # Stage 1: build the React frontend
 FROM node:22-alpine AS web
 WORKDIR /web

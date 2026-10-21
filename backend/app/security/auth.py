@@ -35,7 +35,7 @@ def reset_throttle() -> None:  # used by tests
 
 def require_auth(request: Request, settings: Settings = Depends(get_settings)) -> None:
     if not settings.access_token:
-        if settings.is_production:
+        if settings.is_production and not settings.allow_open_access:
             raise HTTPException(503, "Access token not configured on the server.")
         return
 

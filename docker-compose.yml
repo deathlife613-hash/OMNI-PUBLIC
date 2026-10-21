@@ -1,10 +1,13 @@
-# NOT YET TESTED. Usage: copy .env.example to .env, set OMNI_ACCESS_TOKEN, then `docker compose up --build`.
+# STATICALLY REVIEWED ONLY, never run. Usage: copy .env.example to .env, set OMNI_ACCESS_TOKEN, then `docker compose up --build`.
+# (No-token mode: add OMNI_ALLOW_OPEN_ACCESS=true to .env - read docs/DEPLOYMENT.md "Open access" first.)
 services:
   omni:
     build: .
     ports:
       - "8000:8000"
-    env_file: .env
+    env_file:
+      - path: .env
+        required: false   # compose >= 2.24; settings can also come from `environment:`
     environment:
       OMNI_ENV: production
       OMNI_DB_PATH: /data/omni.db

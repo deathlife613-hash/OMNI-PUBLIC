@@ -1,10 +1,13 @@
-# NOT YET TESTED. For a VM with a persistent disk: HTTPS via Caddy in front of OMNI.
+# STATICALLY REVIEWED ONLY, never run. For a VM with a persistent disk: HTTPS via Caddy in front of OMNI.
 #   docker compose -f docker-compose.vm.yml up -d --build
 services:
   omni:
     build: .
-    env_file: .env
+    env_file:
+      - path: .env
+        required: false
     environment:
+      FORWARDED_ALLOW_IPS: "*"   # safe here: only Caddy can reach this container; makes rate limits see real client IPs
       OMNI_ENV: production
       OMNI_DB_PATH: /data/omni.db
     volumes:

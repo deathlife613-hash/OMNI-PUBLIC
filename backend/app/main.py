@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -10,6 +11,7 @@ from app.core.config import APP_VERSION, Settings, get_settings
 from app.models.base import Provider
 from app.security.limits import ModelCallLimiter, SecurityHeaders
 from app.services.search import SearchGuard, SearchProvider
+from app.services.sync import build_sync
 from app.services.usage import UsageTracker
 
 
@@ -17,14 +19,26 @@ def create_app(
     settings: Settings | None = None,
     provider_override: Provider | None = None,
     search_override: SearchProvider | None = None,
+    sync_transport=None,
 ) -> FastAPI:
     """Build the app. Passing settings/provider explicitly keeps tests isolated."""
     settings = settings or get_settings()
 
+    sync = build_sync(settings, sync_transport)
+
     @asynccontextmanager
     async def lifespan(_: FastAPI):
+        if sync:
+            await sync.restore_if_needed()  # before init_db; only when no local database exists
         db.init_db(settings.db_path)
+        task = asyncio.create_task(sync.run_forever()) if sync and sync.enabled else None
         yield
+        if task:
+            task.cancel()
+            try:
+                await asyncio.wait_for(sync.push(), timeout=20)  # final snapshot on graceful shutdown
+            except asyncio.TimeoutError:
+                pass
 
     app = FastAPI(title="OMNI", version=APP_VERSION, lifespan=lifespan, docs_url=None, redoc_url=None)
     app.dependency_overrides[get_settings] = lambda: settings
@@ -34,6 +48,7 @@ def create_app(
     app.state.search_provider = search_override
     app.state.search_guard = SearchGuard()
     app.state.limiter = ModelCallLimiter()
+    app.state.sync = sync
     app.add_middleware(SecurityHeaders)
 
     app.add_middleware(

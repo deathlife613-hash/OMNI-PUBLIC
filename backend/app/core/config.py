@@ -22,11 +22,14 @@ class Settings(BaseSettings):
     db_path: Path = BACKEND_DIR / "data" / "omni.db"
     # Single-owner access token. Required in production.
     access_token: str = Field(default="", repr=False)
+    # Production without a token fails closed. Set true ONLY if you accept that anyone with the URL can use
+    # your model quota and read/replace your data (see docs/DEPLOYMENT.md "Open access").
+    allow_open_access: bool = False
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
     frontend_dist: Path = BACKEND_DIR.parent / "frontend" / "dist"
 
     # AI provider
-    ai_provider: str = "groq"  # groq | openrouter
+    ai_provider: str = "groq"  # groq | openrouter | ollama | huggingface
     ai_model: str | None = None  # None = recommended default for the provider; "" = none; changeable in the UI
     ai_base_url: str = ""  # override only if you know the endpoint is free to you
     ai_api_key: str = Field(default="", repr=False)
@@ -45,13 +48,19 @@ class Settings(BaseSettings):
     agent_max_seconds: float = 300
     agent_step_output_chars: int = 4000
 
-    # Web search (optional). "" = disabled. tavily | searxng
-    search_provider: str = ""
+    # Web search. "" = disabled. auto (DuckDuckGo, then Wikipedia; no signup) | duckduckgo | wikipedia | tavily | searxng
+    search_provider: str = "auto"
     search_api_key: str = Field(default="", repr=False)
     search_base_url: str = ""  # for searxng
     search_max_results: int = 5
     search_cache_ttl_s: float = 3600
     search_daily_cap: int = 30  # own guard: Tavily free = 1,000 credits/month
+
+    # Persistence for hosts with an ephemeral disk. "" = off | hf_dataset (private Hugging Face Dataset)
+    sync_provider: str = ""
+    sync_hf_repo: str = ""  # e.g. "yourname/omni-data" - must be a PRIVATE dataset
+    sync_hf_token: str = Field(default="", repr=False)  # fine-grained token, write access to that one repo
+    sync_interval_s: float = 120
 
     # Folder OMNI may search/read (read-only, .txt/.md/.csv). Empty = document tools disabled.
     docs_dir: Path | None = None

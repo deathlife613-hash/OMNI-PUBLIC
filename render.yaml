@@ -1,5 +1,9 @@
-# DEMO ONLY — NOT TESTED. Render's free web service has an EPHEMERAL disk: all OMNI data is erased on
-# every restart/redeploy/spin-down. Download a backup (Memory tab) before you leave. See docs/DEPLOYMENT.md.
+# Free web service on Render (Docker). STATICALLY REVIEWED ONLY - never deployed.
+# Honest limits (Render docs, checked 2026-10-20): spins down after 15 min idle (~1 min cold start),
+# 750 free instance hours/month, EPHEMERAL disk (SQLite is wiped on every restart/spin-down/redeploy).
+# OMNI survives that by syncing its database to a PRIVATE Hugging Face Dataset (OMNI_SYNC_*), see docs/DEPLOYMENT.md.
+# Render says free services are not for production use. Whether signup asks for a card was NOT verifiable
+# from official docs - if Render asks for a card, stop (this project's hard rule is no card).
 services:
   - type: web
     name: omni
@@ -9,9 +13,19 @@ services:
     envVars:
       - key: OMNI_ENV
         value: production
+      - key: FORWARDED_ALLOW_IPS
+        value: "*"            # behind Render's proxy; makes rate limits see real client IPs
       - key: OMNI_ACCESS_TOKEN
-        sync: false   # you enter this in Render's dashboard; never commit it
+        sync: false           # enter in Render's dashboard; never commit. Leave EMPTY only with OMNI_ALLOW_OPEN_ACCESS=true
+      - key: OMNI_ALLOW_OPEN_ACCESS
+        value: "false"        # "true" = no login: anyone with the URL can spend your model quota and read your data
       - key: OMNI_AI_PROVIDER
         value: groq
       - key: OMNI_AI_API_KEY
         sync: false
+      - key: OMNI_SYNC_PROVIDER
+        value: hf_dataset
+      - key: OMNI_SYNC_HF_REPO
+        sync: false           # e.g. yourname/omni-data (PRIVATE dataset)
+      - key: OMNI_SYNC_HF_TOKEN
+        sync: false           # fine-grained HF token with write access to that one dataset

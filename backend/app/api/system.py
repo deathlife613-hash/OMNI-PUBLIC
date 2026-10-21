@@ -62,12 +62,16 @@ def status(request: Request, settings: Settings = Depends(get_settings)) -> dict
             "last_test": last,
             "paid_providers_allowed": settings.allow_paid_providers,
         },
-        "auth": {"token_required": bool(settings.access_token)},
+        "auth": {
+            "token_required": bool(settings.access_token),
+            "open_access": settings.is_production and not settings.access_token and settings.allow_open_access,
+        },
         "integrations": {
             "search": {
                 "configured": bool(request.app.state.search_provider) or bool(settings.search_provider),
                 "provider": settings.search_provider or None,
             },
             "documents": {"enabled": bool(settings.docs_dir)},
+            "sync": request.app.state.sync.state() if request.app.state.sync else {"configured": False},
         },
     }

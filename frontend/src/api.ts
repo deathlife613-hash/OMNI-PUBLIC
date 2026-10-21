@@ -102,8 +102,12 @@ export interface SystemStatus {
     last_test: LastTest | null;
     paid_providers_allowed: boolean;
   };
-  auth: { token_required: boolean };
-  integrations: { search: { configured: boolean; provider: string | null }; documents: { enabled: boolean } };
+  auth: { token_required: boolean; open_access?: boolean };
+  integrations: {
+    search: { configured: boolean; provider: string | null };
+    documents: { enabled: boolean };
+    sync?: { configured: boolean; last_success?: string | null; last_error?: string | null };
+  };
 }
 
 export interface Conversation {

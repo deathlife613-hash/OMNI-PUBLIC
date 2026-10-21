@@ -60,7 +60,7 @@ def test_searxng_parsing():
 
 def test_build_search_states():
     with pytest.raises(SearchError) as e:
-        build_search(Settings(_env_file=None))
+        build_search(Settings(_env_file=None, search_provider=""))
     assert e.value.kind == "disabled"
     with pytest.raises(SearchError) as e:
         build_search(Settings(_env_file=None, search_provider="tavily"))
@@ -149,3 +149,80 @@ def test_search_routes_require_auth(make_client):
     c = make_client(access_token="tok")
     assert c.post("/api/search", json={"query": "x"}).status_code == 401
     assert c.get("/api/search/status").status_code == 401
+
+
+# ---- no-signup search (DuckDuckGo scrape, Wikipedia API, auto fallback) ----
+import httpx  # noqa: E402
+
+from app.services.search import DuckDuckGoSearch, FallbackSearch, WikipediaSearch  # noqa: E402
+
+DDG_HTML = """
+<div class="result"><h2><a class="result__a" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fexample.com%2Fa%3Fx%3D1&rut=abc">Example <b>A</b></a></h2>
+<a class="result__snippet" href="x">First snippet <b>text</b></a></div>
+<div class="result"><h2><a class="result__a" href="javascript:alert(1)">Bad link</a></h2>
+<a class="result__snippet">ignored</a></div>
+<div class="result"><h2><a class="result__a" href="https://direct.example.org/b">Direct B</a></h2>
+<a class="result__snippet">Second snippet</a></div>
+"""
+
+
+def run_(coro):
+    import asyncio
+
+    return asyncio.run(coro)
+
+
+def test_duckduckgo_parses_results_decodes_redirects_and_drops_non_http():
+    seen = {}
+
+    def handler(req: httpx.Request):
+        seen["method"], seen["body"], seen["ua"] = req.method, req.content.decode(), req.headers["user-agent"]
+        return httpx.Response(200, text=DDG_HTML)
+
+    res = run_(DuckDuckGoSearch(transport=httpx.MockTransport(handler)).search("hello world", 5))
+    assert [r.url for r in res] == ["https://example.com/a?x=1", "https://direct.example.org/b"]
+    assert res[0].title == "Example A" and res[0].snippet == "First snippet text"
+    assert seen["method"] == "POST" and "q=hello+world" in seen["body"] and "OMNI" in seen["ua"]
+
+
+def test_duckduckgo_challenge_and_format_change_are_reported_not_faked():
+    with pytest.raises(SearchError) as e:
+        run_(DuckDuckGoSearch(transport=httpx.MockTransport(lambda r: httpx.Response(202, text=""))).search("q", 5))
+    assert e.value.kind == "rate_limit"
+    with pytest.raises(SearchError) as e:
+        run_(DuckDuckGoSearch(transport=httpx.MockTransport(lambda r: httpx.Response(200, text="<html>nothing</html>"))).search("q", 5))
+    assert e.value.kind == "unavailable"
+
+
+def test_wikipedia_results_have_clean_snippets_and_encoded_urls():
+    def handler(req):
+        assert req.url.params["srsearch"] == "alan turing" and req.url.params["action"] == "query"
+        return httpx.Response(200, json={"query": {"search": [
+            {"title": "Alan Turing", "snippet": 'English <span class="searchmatch">mathematician</span> &amp; more'},
+            {"title": "Turing (disambiguation)", "snippet": "x"},
+        ]}})
+
+    res = run_(WikipediaSearch(transport=httpx.MockTransport(handler)).search("alan turing", 5))
+    assert res[0].url == "https://en.wikipedia.org/wiki/Alan_Turing" and res[0].snippet == "English mathematician & more"
+    assert res[1].url.endswith("Turing_%28disambiguation%29")
+
+
+def test_auto_falls_back_only_on_failure_and_reports_when_all_fail():
+    good = FakeSearch()
+    bad = FakeSearch(error=SearchError("rate_limit", "blocked"))
+    both_bad = FallbackSearch([bad, FakeSearch(error=SearchError("unavailable", "down"))])
+    f = FallbackSearch([bad, good])
+    assert run_(f.search("q", 3))[0].url == "https://a.example/x" and f.last_used == "fakesearch"
+    assert bad.calls == 1 and good.calls == 1
+    primary_ok = FakeSearch()
+    run_(FallbackSearch([primary_ok, good]).search("q", 3))
+    assert good.calls == 1  # second provider untouched when the first succeeds
+    with pytest.raises(SearchError) as e:
+        run_(both_bad.search("q", 3))
+    assert e.value.kind == "unavailable"
+
+
+def test_search_works_out_of_the_box_by_default_setting():
+    assert Settings(_env_file=None).search_provider == "auto"
+    assert build_search(Settings(_env_file=None)).name == "auto"
+    assert build_search(Settings(_env_file=None, search_provider="duckduckgo")).name == "duckduckgo"

@@ -85,3 +85,21 @@ Chromium). **NOT TESTED** = never executed. **NOT IMPLEMENTED** = not built. Not
 3. Memory tab: add a memory, ask about it in chat. Download a backup, restore it.
 4. Tools: add a reminder 1 minute ahead; keep the tab open.
 5. Agents: set `OMNI_WORKSPACE_DIR` to a throwaway folder; give a coding goal; review the diff; approve; revert.
+
+
+## Update 2026-10-20 (night): new work order
+Statuses: **UNIT TESTS WRITTEN** = code + tests committed, not yet run anywhere (I cannot install dependencies in my sandbox; run `pytest` in Colab). **NOT TESTED** = never run. Nothing below is PASS until a run is reported.
+
+| Item | Result |
+|---|---|
+| Ollama adapter (cloud + local) | UNIT TESTS WRITTEN (mocked HTTP). Live model list + chat: NOT TESTED |
+| Hugging Face adapter | UNIT TESTS WRITTEN. Live: NOT TESTED. **Not free for free accounts** (no included credits per HF pricing page); expect a 402 "quota" error |
+| Non-chat model filter applies to all adapters | UNIT TESTS WRITTEN |
+| No-signup web search (`auto`: DuckDuckGo then Wikipedia) | UNIT TESTS WRITTEN (mocked pages). Live searches: NOT TESTED. DuckDuckGo is an unofficial scrape and may be blocked from hosting IPs; Wikipedia is the reliable fallback |
+| Search daily cap / untrusted labelling unchanged | UNCHANGED code; prior tests PASS |
+| HF-Dataset persistence sync (restore, change-only push, shutdown push, public-repo refusal, restore-failure guard) | UNIT TESTS WRITTEN (in-memory fake of HF). Real Hugging Face: NOT TESTED |
+| Open-access mode (explicit opt-in; token still enforced if set) | UNIT TESTS WRITTEN |
+| Dockerfile / compose / Caddyfile / render.yaml | **STATICALLY REVIEWED ONLY.** Added `.dockerignore`, optional `.env`, `FORWARDED_ALLOW_IPS`; YAML parses. See "Unverifiable without Docker" in PROJECT_STATUS.md |
+| Real deployment | NOT TESTED |
+| Voice with a real microphone | NOT TESTED - procedure in `docs/VOICE_VERIFICATION.md` |
+| Wake word, local Whisper | NOT IMPLEMENTED |

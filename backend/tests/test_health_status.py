@@ -38,5 +38,5 @@ def test_status_reports_unavailable_as_null_not_fake(make_client):
 def test_status_reports_integrations_without_secrets(make_client):
     c = make_client(search_provider="tavily", search_api_key="tvly-SECRETSECRETSECRET")
     r = c.get("/api/status")
-    assert r.json()["integrations"] == {"search": {"configured": True, "provider": "tavily"}, "documents": {"enabled": False}}
+    assert r.json()["integrations"] == {"search": {"configured": True, "provider": "tavily"}, "documents": {"enabled": False}, "sync": {"configured": False}}
     assert "SECRETSECRET" not in r.text
