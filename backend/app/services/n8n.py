@@ -88,13 +88,12 @@ def parse_targets(raw: str, allow_private: bool = False) -> tuple[dict[str, str]
 
 
 def json_depth(v, limit: int, d: int = 1) -> bool:
-    """True if nesting depth is within limit."""
-    if d > limit:
-        return False
+    """True if container nesting (dict/list levels) is within limit. Scalars are not a level:
+    {"a": [1, {"b": 2}]} is depth 3."""
     if isinstance(v, dict):
-        return all(json_depth(x, limit, d + 1) for x in v.values())
+        return d <= limit and all(json_depth(x, limit, d + 1) for x in v.values())
     if isinstance(v, list):
-        return all(json_depth(x, limit, d + 1) for x in v)
+        return d <= limit and all(json_depth(x, limit, d + 1) for x in v)
     return True
 
 
