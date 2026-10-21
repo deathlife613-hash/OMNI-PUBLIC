@@ -31,6 +31,21 @@ MEMORY = f"My cat is named Pixel {RUN}"
 TASK = f"Pay rent {RUN}"
 
 
+def preflight() -> None:
+    """Fail fast if '/' isn't the built app (e.g. frontend/dist missing): such runs say nothing about the UI."""
+    import urllib.request
+
+    try:
+        body = urllib.request.urlopen(URL, timeout=10).read(4000).decode("utf-8", "replace")
+    except Exception as exc:  # noqa: BLE001
+        sys.exit(f"PREFLIGHT FAILED: cannot load {URL}: {exc}")
+    if 'id="root"' not in body:
+        sys.exit(f"PREFLIGHT FAILED: {URL} did not serve the app (got {body[:80]!r}). Build it first: cd frontend && npm ci && npm run build")
+
+
+preflight()
+
+
 def wanted(group: str) -> bool:
     return not ONLY or group in ONLY
 
