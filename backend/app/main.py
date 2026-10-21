@@ -24,6 +24,7 @@ def create_app(
     sync_transport=None,
     tts_transport=None,
     n8n_transport=None,
+    n8n_resolver=None,
 ) -> FastAPI:
     """Build the app. Passing settings/provider explicitly keeps tests isolated."""
     settings = settings or get_settings()
@@ -55,7 +56,7 @@ def create_app(
     app.state.sync = sync
     app.state.tts = build_tts(settings, tts_transport)
     app.state.tts_guard = TTSGuard(settings.tts_cache_entries)
-    app.state.n8n = N8NClient(settings, n8n_transport)
+    app.state.n8n = N8NClient(settings, n8n_transport, n8n_resolver)
     app.add_middleware(SecurityHeaders)
 
     app.add_middleware(

@@ -84,8 +84,12 @@ class Settings(BaseSettings):
     n8n_auth_header: str = ""  # optional header name matching n8n's Webhook "Header auth"
     n8n_auth_value: str = Field(default="", repr=False)
     n8n_timeout_s: float = 20
-    n8n_max_payload_bytes: int = 20000
-    n8n_response_max_chars: int = 2000
+    n8n_max_payload_bytes: int = 65536
+    n8n_response_max_chars: int = 500  # preview only; the full body is never returned to the agent
+    n8n_max_json_depth: int = 8
+    # SSRF guard: private / loopback / link-local / reserved destinations are refused unless the operator sets this
+    # for a deliberately private n8n (same box or LAN). The destination still comes only from server env.
+    n8n_allow_private: bool = False
 
     # Folder OMNI may search/read (read-only, .txt/.md/.csv). Empty = document tools disabled.
     docs_dir: Path | None = None
