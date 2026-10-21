@@ -67,6 +67,17 @@ class Settings(BaseSettings):
     sync_hf_token: str = Field(default="", repr=False)  # fine-grained token, write access to that one repo
     sync_interval_s: float = 120
 
+    # Text-to-speech. "" = off (browser-native voice only). elevenlabs = server-side TTS; the key never leaves the server.
+    tts_provider: str = ""
+    tts_api_key: str = Field(default="", repr=False)
+    tts_voice_id: str = ""  # required when tts_provider is set; pick one from your ElevenLabs voice list
+    tts_model: str = "eleven_flash_v2_5"  # UNVERIFIED default; confirm with GET /v1/models, override via env
+    tts_base_url: str = "https://api.elevenlabs.io"
+    tts_max_chars_per_reply: int = 1500
+    tts_monthly_char_cap: int = 8000  # OMNI's own estimate guard; free plan is ~10k credits/month
+    tts_cache_entries: int = 64
+    tts_timeout_s: float = 30
+
     # Folder OMNI may search/read (read-only, .txt/.md/.csv). Empty = document tools disabled.
     docs_dir: Path | None = None
     tool_timeout_s: float = 5

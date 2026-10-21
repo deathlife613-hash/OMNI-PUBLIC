@@ -5,13 +5,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api import agents, chat, health, memory, provider, search, skills, system, tools
+from app.api import agents, chat, health, memory, provider, search, skills, system, tools, voice
 from app.core import db
 from app.core.config import APP_VERSION, Settings, get_settings
 from app.models.base import Provider
 from app.security.limits import ModelCallLimiter, SecurityHeaders
 from app.services.search import SearchGuard, SearchProvider
 from app.services.sync import build_sync
+from app.services.tts import TTSGuard, build_tts
 from app.services.usage import UsageTracker
 
 
@@ -20,6 +21,7 @@ def create_app(
     provider_override: Provider | None = None,
     search_override: SearchProvider | None = None,
     sync_transport=None,
+    tts_transport=None,
 ) -> FastAPI:
     """Build the app. Passing settings/provider explicitly keeps tests isolated."""
     settings = settings or get_settings()
@@ -49,6 +51,8 @@ def create_app(
     app.state.search_guard = SearchGuard()
     app.state.limiter = ModelCallLimiter()
     app.state.sync = sync
+    app.state.tts = build_tts(settings, tts_transport)
+    app.state.tts_guard = TTSGuard(settings.tts_cache_entries)
     app.add_middleware(SecurityHeaders)
 
     app.add_middleware(
@@ -67,6 +71,7 @@ def create_app(
     app.include_router(search.router, prefix="/api")
     app.include_router(agents.router, prefix="/api")
     app.include_router(skills.router, prefix="/api")
+    app.include_router(voice.router, prefix="/api")
 
     # Single-container deployment: serve the built frontend when present.
     if settings.frontend_dist.is_dir():

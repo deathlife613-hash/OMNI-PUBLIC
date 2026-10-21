@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Request
 from app.api.provider import effective_model
 from app.core import db
 from app.core.config import APP_VERSION, Settings, get_settings
+from app.services.tts import tts_state
 from app.security.auth import require_auth
 
 router = APIRouter(dependencies=[Depends(require_auth)])
@@ -74,6 +75,7 @@ def status(request: Request, settings: Settings = Depends(get_settings)) -> dict
                 "provider": settings.search_provider or None,
             },
             "documents": {"enabled": bool(settings.docs_dir)},
+            "tts": tts_state(settings, request.app.state.tts_guard, request.app.state.tts is not None),
             "sync": request.app.state.sync.state() if request.app.state.sync else {"configured": False},
         },
     }

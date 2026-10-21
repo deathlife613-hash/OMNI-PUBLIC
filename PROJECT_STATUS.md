@@ -185,3 +185,11 @@ Commits: 7b8223f (theme tokens) -> 773e952 (OmniCore canvas orb + header) -> 4cf
 - Screenshots vs the reference: accepted by the owner side as the same family (orb with rings in front and behind, magenta grid floor, glass panels, opaque chat); body bg measured #020617; orb in header 34px / dashboard 280px / chat empty state 150px; no console errors. No polish round requested.
 - Postgres: verified in Colab on local PostgreSQL 16 (see above); real Neon run still pending.
 - Parked: deployment (Render email verification, Neon connection string) awaits Sebastian; Ollama live test in flight.
+
+## ElevenLabs TTS adapter (backend) - WRITTEN, NOT VERIFIED
+Server-side only; off unless `OMNI_TTS_PROVIDER=elevenlabs` + `OMNI_TTS_API_KEY` + `OMNI_TTS_VOICE_ID` are set (key is a server env secret, never in repo/browser/logs/errors). With none set, OMNI behaves as before: `GET /api/voice/status` and `/api/status` -> `integrations.tts` report "TTS: not configured. Using browser voices." and `POST /api/voice/speak` returns 503 `not_configured`.
+- Endpoints: `GET /api/voice/status`, `POST /api/voice/speak {text}` -> `audio/mpeg` (`X-OMNI-TTS-Cache: hit|miss`). Both behind the normal auth.
+- Free-credit guards: per-reply char cap (1500), own monthly char counter (cap 8000, an ESTIMATE, resets on restart, charged only after success), in-memory LRU cache keyed by (voice, model, text) so repeats are free, 2-concurrent semaphore.
+- Errors mapped to clear kinds (auth / quota (402) / rate_limit / bad_request / timeout / unavailable / too_long / monthly_cap); provider response bodies and the key are never echoed.
+- Tests: `tests/test_tts.py` (mocked provider via httpx.MockTransport). Not run here (no pytest in my sandbox); the live test waits for Sebastian's key. Unverified: free-plan API access, default model id `eleven_flash_v2_5`, voice ids, the exact error codes ElevenLabs returns (mapping follows common HTTP semantics).
+- NOT built: frontend "Voice engine" switch / audio playback (also needs `media-src blob:` in the CSP). Next commit if approved.
