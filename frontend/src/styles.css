@@ -139,3 +139,40 @@ pre.diff { background: var(--input-bg); border: 1px solid var(--line); border-ra
 .omni-core { display: block; max-width: 100%; }
 .brand-core { filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.5)); }
 :root[data-theme="light"] .omni-core { filter: none; opacity: 0.9; }
+
+/* ---- per-view styling ---- */
+/* Art lives in hero/empty areas only; message text sits on near-solid surfaces for readability. */
+.hero {
+  grid-column: 1 / -1; display: grid; place-items: center; padding: 8px 0 0; position: relative; overflow: hidden;
+  border-radius: 14px; min-height: 220px;
+  background:
+    radial-gradient(closest-side, rgba(34, 211, 238, 0.12), transparent 75%),
+    linear-gradient(to top, rgba(217, 70, 239, 0.18), transparent 45%);
+}
+/* retro perspective grid along the bottom: magenta, thin, low-opacity */
+.hero::after {
+  content: ""; position: absolute; left: -10%; right: -10%; bottom: 0; height: 45%; pointer-events: none;
+  background:
+    repeating-linear-gradient(to right, rgba(217, 70, 239, 0.28) 0 1px, transparent 1px 44px),
+    repeating-linear-gradient(to bottom, rgba(217, 70, 239, 0.22) 0 1px, transparent 1px 22px);
+  transform: perspective(260px) rotateX(58deg); transform-origin: bottom;
+  -webkit-mask-image: linear-gradient(to top, #000, transparent); mask-image: linear-gradient(to top, #000, transparent);
+}
+.hero .omni-core { position: relative; z-index: 1; }
+.empty-hero { display: grid; justify-items: center; gap: 4px; padding: 12px 0; text-align: center; }
+.bubble { box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.04); }
+.bubble.assistant { box-shadow: var(--glow); }
+.composer textarea:focus-visible, input:focus-visible, select:focus-visible { border-color: var(--accent); box-shadow: var(--glow-strong); }
+.pill { background: rgba(34, 211, 238, 0.05); font-family: var(--font-display); letter-spacing: 0.06em; }
+.pill.online { box-shadow: 0 0 10px rgba(61, 220, 151, 0.25); }
+pre, code { font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace; }
+pre.diff { border-color: var(--line-strong); }
+.tag { border-color: var(--line-strong); color: var(--accent-2); }
+li.off { opacity: 0.55; }
+ul.plain li { border-bottom-color: var(--line); }
+::selection { background: rgba(34, 211, 238, 0.3); }
+@media (max-width: 720px) { .hero { min-height: 190px; } .shell { padding: 12px; } .top { flex-wrap: wrap; gap: 8px; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+:root[data-theme="light"] .hero { background: none; }
+:root[data-theme="light"] .hero::after { display: none; }
+:root[data-theme="light"] .pill { background: none; }

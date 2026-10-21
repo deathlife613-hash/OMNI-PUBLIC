@@ -1,3 +1,4 @@
+import OmniCore from "./OmniCore";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import VoiceBar, { loadPrefs, type VoicePrefs } from "./voice/VoiceBar";
 import { speak } from "./voice/speech";
@@ -226,7 +227,10 @@ export default function Chat({ status, onStatusChange }: Props) {
 
         <div className="log" aria-live="polite">
           {messages.length === 0 && !partial && (
-            <p className="muted">OMNI is online. Pick a model, then ask something.</p>
+            <div className="empty-hero">
+              <OmniCore size={150} points={200} />
+              <p className="muted">OMNI is online. Pick a model, then ask something.</p>
+            </div>
           )}
           {messages.map((m) => (
             <div key={m.id} className={`bubble ${m.role}`}>

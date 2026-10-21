@@ -1,3 +1,4 @@
+import OmniCore from "./OmniCore";
 import { useEffect, useState, type ReactNode } from "react";
 import {
   fetchSearchStatus,
@@ -50,6 +51,9 @@ export default function Dashboard({ status, go }: { status: SystemStatus | null;
   const ai = status?.ai;
   return (
     <main className="grid">
+      <div className="hero" aria-hidden="true">
+        <OmniCore size={280} points={420} ambient />
+      </div>
       <Card title="Quick actions">
         <div className="row">
           <button onClick={() => go("chat")}>New chat</button>
