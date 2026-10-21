@@ -148,3 +148,8 @@ Expected backend tests after this commit: previous 155 + new (registry 7, search
 Blocked routes (payment walls): HF Docker Spaces (paid plan), Oracle (card), Koyeb (card pre-auth reported).
 Docker - cannot be verified without a Docker host: image builds (npm install, vite build, pip install), container start as non-root with `/data` volume ownership, HEALTHCHECK, compose `env_file.required` syntax (needs Compose >= 2.24), Caddy certificate issuance and streaming (`flush_interval -1`) through the proxy, and Render's acceptance of the Docker free plan.
 Needs from owner: Render account (check for a card prompt), private HF dataset + fine-grained token, Groq key as a Render env var, an HF token must never be pasted in chat.
+
+
+## Split architecture + plan ordering (2026-10-20 night)
+Direction from the owner: brain Groq, compute Render free, memory Neon Postgres, vault HF private dataset, code GitHub, voice ElevenLabs (browser voice fallback), automation n8n, Cloudflare only if it earns its place. Docs: DEPLOYMENT.md (split map), FREE_SERVICES_RESEARCH.md, POSTGRES_PLAN.md, INTEGRATIONS_PLAN.md. **Built: Groq/Ollama/HF adapters, HF sync. NOT built: Neon/Postgres, ElevenLabs TTS, n8n webhook tool.**
+Order: (1) Colab verification of the latest commit; (2) Postgres Option A (awaiting go); (3) ElevenLabs; (4) n8n webhook tool; (5) hosting qualification + deploy + end-to-end test; (6) human voice test.

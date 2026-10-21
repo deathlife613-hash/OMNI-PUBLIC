@@ -7,6 +7,24 @@ OMNI keeps your data in a SQLite file. It is only durable if that file sits on a
 ephemeral filesystem (for example Render's free web service) every restart, redeploy or spin-down **erases it**. OMNI
 has no hosted-database backend yet, so Supabase/Firebase are *not* drop-in options today.
 
+## The split architecture (the plan)
+No single-server home: each job runs on its own free service and they connect through environment variables and secrets. **Status column is honest: nothing here has been deployed yet.**
+
+| Piece | Service | What lives there | Connected by | Status |
+|---|---|---|---|---|
+| Brain (model) | **Groq** (alt: Ollama Cloud, OpenRouter `:free`; HF is not free) | Inference only; no OMNI data stored | `OMNI_AI_PROVIDER`, `OMNI_AI_API_KEY` on the compute host | Live-tested from Colab 2026-10-20 |
+| Compute | **Render free web service** (Docker) | The FastAPI backend + built frontend; ephemeral disk, sleeps after 15 min | `render.yaml`; all secrets as Render env vars | Config written, never deployed; card requirement unverified |
+| Memory | **Neon free Postgres** (planned) | Conversations, memories, notes, tasks, agent/skill records | `OMNI_DATABASE_URL` (server env only) | **Not built** - plan in `docs/POSTGRES_PLAN.md`, awaiting go. Until then SQLite is the store |
+| Backup / vault | **Hugging Face private Dataset** | Gzipped snapshots of the SQLite DB (SQLite mode); later also JSON exports | `OMNI_SYNC_PROVIDER=hf_dataset`, `OMNI_SYNC_HF_REPO`, `OMNI_SYNC_HF_TOKEN` | Built, unit-tested with a fake HF; real HF untested |
+| Code + CI | **GitHub** | Source (`omni-public`), history | Render builds from the repo | Repo live; GitHub Actions unusable (account billing lock) - tests run in Colab |
+| Voice | **ElevenLabs** (planned) + browser voice fallback | Audio generated on demand; nothing stored by OMNI | `OMNI_TTS_*` env vars | **Not built** - `docs/INTEGRATIONS_PLAN.md` |
+| Automation | **n8n** (planned, self-hosted) | Workflows + its own DB | OMNI -> n8n via `OMNI_N8N_WEBHOOKS`; n8n -> OMNI via OMNI's API + token | **Not built; no host chosen** - contract in `docs/INTEGRATIONS_PLAN.md` |
+| Front door | **Cloudflare** (optional) | Would proxy/hide the Render URL, add rate limiting or a login gate | DNS / tunnel | **Does not earn its place yet:** Render already serves HTTPS; Cloudflare's proxy needs a domain you own, and I could not verify its free Access (login gate) terms - the pricing page I read did not state them |
+
+Data flow: browser -> Render (OMNI) -> Groq (reply text) and -> Neon (data) and -> HF (backups) and, when enabled, -> ElevenLabs (reply text for speech) and <-> n8n (named webhooks). The browser never sees any key.
+
+Where each secret goes: model key, DB URL, HF token, TTS key, n8n webhook URLs and the OMNI access token are **Render environment variables only** (dashboard, `sync: false`). Never in the repo, the frontend, or chat. Rotate by replacing the env var and redeploying (see "Rotating secrets").
+
 ## Hosting vs. the AI model
 Hosting OMNI = where the app and your data live. The AI "brain" is a separate hosted model (Groq etc.) that OMNI's
 backend calls with a key you provide. Your browser only talks to OMNI; keys never reach it.

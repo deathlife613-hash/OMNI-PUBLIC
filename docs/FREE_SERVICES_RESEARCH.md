@@ -99,3 +99,21 @@ What we kept from that research: its final architecture - **separate free-tier c
 | Egress | 5 GB per project per month |
 | At the limit | Compute stays suspended until next period; storage over limit blocks writes; neither deletes data |
 | Not stated on the page I read | Cold-start latency; any inactivity deletion policy for free projects - **verify before relying on it** |
+
+
+## Split-architecture additions (2026-10-20 night)
+### Neon: further verification (official docs via summarizer)
+| Item | Finding |
+|---|---|
+| Reactivation | "Within a few hundred milliseconds" on the next query after the 5-minute suspend (docs.neon; no typical figure given - **measure it**) |
+| History / restore | Free plan: 6-hour restore window (1 GB-month change cap); 10 branches per project |
+| Still unverified | Inactivity deletion of free projects (not mentioned on pages read); pooler connection limits; card requirement is "not required" on the pricing page, silent on the plans page |
+
+### ElevenLabs (voice layer; see docs/INTEGRATIONS_PLAN.md)
+Free: 10k credits/month (~10 min of TTS), 2 concurrent, 128 kbps MP3 (pricing page). **API access on free: not stated on the pricing page**; one secondary article says yes. No commercial license on free (personal use only). Card requirement: not stated. TTS endpoint `POST /v1/text-to-speech/{voice_id}` with `xi-api-key` (official API reference).
+
+### n8n (automation layer; see docs/INTEGRATIONS_PLAN.md)
+Self-hosted Docker, port 5678, data (SQLite + encryption key) in `/home/node/.n8n`; webhook node supports Basic/Header/JWT auth and IP allowlist, 16 MB payload default (official docs). Sustainable Use License: personal/internal/non-commercial use allowed, no selling it as a service (GitHub LICENSE.md). Minimum RAM not stated; host not chosen; the host must pass the same no-card test.
+
+### Cloudflare as front door
+Not needed yet. Free plan terms for Zero Trust Access (user count, whether a domain is required) were **not stated** on the page I read (cloudflare.com/plans/zero-trust-services); the general free plan page (cloudflare.com/plans/free) was not fetched. Revisit only if Sebastian owns a domain and wants a login gate or rate limiting in front of an open-access instance.
