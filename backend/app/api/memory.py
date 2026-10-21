@@ -217,6 +217,7 @@ def restore(body: Restore, settings: Settings = Depends(get_settings)) -> dict:
                     "INSERT INTO notes(id, title, body, created_at, updated_at) VALUES (?,?,?,?,?)",
                     (n["id"], n["title"], n["body"], n["created_at"], n["updated_at"]),
                 )
+            db.resync_sequences(conn, ("messages", "memories", "notes"))  # Postgres: counters must pass restored ids
     except HTTPException:
         raise
     except Exception:

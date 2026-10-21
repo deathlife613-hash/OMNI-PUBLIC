@@ -2,6 +2,10 @@ import sqlite3
 
 from app.core import db
 
+import pytest
+
+pytestmark = pytest.mark.sqlite_only
+
 
 def test_init_creates_schema_and_is_idempotent(tmp_path):
     path = tmp_path / "x.db"

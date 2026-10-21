@@ -4,7 +4,9 @@ def test_health_ok_and_initializes_db(make_client, tmp_path):
     assert r.status_code == 200
     body = r.json()
     assert body["status"] == "ok" and body["database"] == "ok"
-    assert (tmp_path / "test.db").exists()
+    from tests.conftest import TEST_PG_URL
+
+    assert TEST_PG_URL or (tmp_path / "test.db").exists()  # the file only exists in SQLite mode
 
 
 def test_health_reveals_no_config(make_client):

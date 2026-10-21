@@ -104,6 +104,6 @@ Statuses: **UNIT TESTS WRITTEN** = code + tests committed, not yet run anywhere 
 | Voice with a real microphone | NOT TESTED - procedure in `docs/VOICE_VERIFICATION.md` |
 | Wake word, local Whisper | NOT IMPLEMENTED |
 
-| Neon/Postgres backend | NOT IMPLEMENTED (plan only) |
+| Neon/Postgres backend (`OMNI_DATABASE_URL`) | **WRITTEN, NOT VERIFIED.** SQLite mode unchanged; Postgres mode never run against a server yet; Neon never contacted |
 | ElevenLabs TTS with browser fallback | NOT IMPLEMENTED (plan only); free-plan API access unverified |
 | n8n webhook tool / automation token | NOT IMPLEMENTED (plan only); no host chosen |

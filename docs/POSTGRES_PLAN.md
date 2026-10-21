@@ -1,4 +1,6 @@
-# Postgres (Neon) path: scope and honest cost - PLAN ONLY, nothing built yet
+# Postgres (Neon) path: scope and honest cost
+
+> **Status 2026-10-20 night: Option A is WRITTEN (steps 1-3) but NOT VERIFIED.** See PROJECT_STATUS.md. Implementation note: instead of a hand-written second DDL set, the Postgres DDL is generated from the SQLite DDL, and the few SQLite spellings are translated at execute time (`db.translate`), which kept all ~100 call sites unchanged.
 
 ## Why
 Today: SQLite on the host's disk, plus HF-Dataset snapshot sync for hosts with an ephemeral disk. That loses up to ~2 minutes of writes on a hard kill and needs restore-on-boot logic. Neon free Postgres (1 GB, 100 CU-h/month, no card, permanent per its pricing page) would make every write durable, and lets compute (Render), database (Neon) and model (Groq) be separate free services.

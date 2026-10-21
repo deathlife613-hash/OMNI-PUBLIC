@@ -1,3 +1,6 @@
+import hashlib
+import os
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -7,6 +10,32 @@ from app.main import create_app
 from app.models.base import ModelInfo, Provider, StreamEvent
 from app.security.auth import reset_throttle
 from app.services.search import SearchProvider, SearchResult
+
+
+# Set TEST_PG_URL (a throwaway Postgres, never your real database) to run the whole suite against Postgres:
+# every test gets its own schema. Unset = SQLite, the default. Read at import time, before the OMNI_* scrub below.
+TEST_PG_URL = os.environ.get("TEST_PG_URL", "")
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "sqlite_only: test touches SQLite files/internals directly; skipped in Postgres mode")
+
+
+def pytest_collection_modifyitems(config, items):
+    if TEST_PG_URL:
+        skip = pytest.mark.skip(reason="SQLite-specific; TEST_PG_URL is set")
+        for item in items:
+            if "sqlite_only" in item.keywords:
+                item.add_marker(skip)
+
+
+def _pg_schema_for(tmp_path) -> str:
+    import psycopg
+
+    name = "t_" + hashlib.sha1(str(tmp_path).encode()).hexdigest()[:16]  # stable per test, so a "restart" sees the same data
+    with psycopg.connect(TEST_PG_URL, autocommit=True) as c:
+        c.execute(f'CREATE SCHEMA IF NOT EXISTS "{name}"')
+    return name
 
 
 class FakeSearch(SearchProvider):
@@ -78,6 +107,7 @@ def _hermetic_env(monkeypatch):
 def make_client(tmp_path):
     """Factory: make_client(provider=FakeProvider(), env="production", ...) -> TestClient."""
     reset_throttle()
+    schemas: list[str] = []
 
     def _make(provider=None, search=None, sync_transport=None, **overrides) -> TestClient:
         base = dict(
@@ -86,11 +116,23 @@ def make_client(tmp_path):
             access_token="",
             ai_api_key="",
             frontend_dist=tmp_path / "no-dist",
-        search_provider="",  # tests never touch the network; opt in with search=/search_provider=
+            search_provider="",  # tests never touch the network; opt in with search=/search_provider=
         )
+        if TEST_PG_URL:
+            schema = _pg_schema_for(tmp_path)
+            schemas.append(schema)
+            base.update(database_url=TEST_PG_URL, database_schema=schema)
         base.update(overrides)
         settings = Settings(_env_file=None, **base)
         db.init_db(settings.db_path)  # TestClient without `with` skips the lifespan hook
         return TestClient(create_app(settings, provider_override=provider, search_override=search, sync_transport=sync_transport))
 
-    return _make
+    yield _make
+
+    if TEST_PG_URL:
+        import psycopg
+
+        db.close_pools()
+        with psycopg.connect(TEST_PG_URL, autocommit=True) as c:
+            for name in set(schemas):
+                c.execute(f'DROP SCHEMA IF EXISTS "{name}" CASCADE')

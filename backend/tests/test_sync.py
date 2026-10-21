@@ -10,6 +10,8 @@ import pytest
 from app.core import db
 from app.services.sync import HFDatasetStore, SyncManager, restore_snapshot, snapshot
 
+pytestmark = pytest.mark.sqlite_only
+
 
 class FakeHF:
     """In-memory stand-in for the Hugging Face dataset endpoints OMNI uses."""

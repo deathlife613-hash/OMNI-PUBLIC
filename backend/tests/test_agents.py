@@ -92,14 +92,15 @@ def test_cancel_before_run_and_during_run(make_client):
     prov = ScriptedProvider([plan(("planning", "a")), "x", "s"])
     c2 = make_client(provider=prov, ai_model="m1")
     t2 = new(c2)
-    import sqlite3
+    from app.core import db
+    from app.core.config import get_settings
 
     orig = prov.stream_chat
 
     async def hook(messages, model, max_tokens):
         if len(prov.calls) == 1:  # after the plan call, request cancel
-            con = sqlite3.connect(c2.app.dependency_overrides[__import__("app.core.config", fromlist=["x"]).get_settings]().db_path)
-            con.execute("UPDATE agent_tasks SET cancel_requested = 1"); con.commit(); con.close()
+            with db.session(c2.app.dependency_overrides[get_settings]().db_path) as con:
+                con.execute("UPDATE agent_tasks SET cancel_requested = 1")
         async for e in orig(messages, model, max_tokens):
             yield e
 
@@ -127,14 +128,12 @@ def test_no_provider_configured_fails_clearly(make_client):
 def test_one_task_at_a_time(make_client):
     c = make_client(provider=ScriptedProvider([]), ai_model="m1")
     a, b = new(c), new(c)
-    import sqlite3
-
+    from app.core import db
     from app.core.config import get_settings
 
     path = c.app.dependency_overrides[get_settings]().db_path
-    con = sqlite3.connect(path)
-    con.execute("UPDATE agent_tasks SET status='running', updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?", (a,))
-    con.commit(); con.close()
+    with db.session(path) as con:
+        con.execute("UPDATE agent_tasks SET status='running', updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?", (a,))
     assert c.post(f"/api/agents/tasks/{b}/run").status_code == 409
 
 
