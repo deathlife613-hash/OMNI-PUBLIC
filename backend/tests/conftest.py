@@ -64,6 +64,16 @@ class FakeProvider(Provider):
             raise self.error
 
 
+@pytest.fixture(autouse=True)
+def _hermetic_env(monkeypatch):
+    """Tests must not depend on the shell: a real OMNI_AI_API_KEY etc. exported in Colab/CI would change defaults."""
+    import os
+
+    for k in list(os.environ):
+        if k.startswith("OMNI_"):
+            monkeypatch.delenv(k, raising=False)
+
+
 @pytest.fixture
 def make_client(tmp_path):
     """Factory: make_client(provider=FakeProvider(), env="production", ...) -> TestClient."""

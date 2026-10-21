@@ -75,3 +75,27 @@ Sources fetched today are official docs unless marked; some pages were read thro
 | Web search without signup | DuckDuckGo HTML endpoint (unofficial scrape; may block datacenter IPs) and Wikipedia's official MediaWiki API (free, no key, encyclopedia only). Public SearXNG instances were rejected as a default: they commonly disable JSON output and rate-limit. **Neither could be called from my sandbox (network allowlist): live behaviour NOT TESTED.** | en.wikipedia.org/w/api.php docs (not fetched); html.duckduckgo.com (blocked in sandbox) |
 
 Decision: recommended no-card route = Render free + HF private-Dataset sync. HF Docker Spaces and Oracle are ruled out by their payment walls.
+
+
+## Chinese-hosted "free" servers - evaluated and REJECTED as OMNI's home (2026-10-20)
+Source: a ChatGPT research session shared by Sebastian, relayed by Mitch. **I did not independently verify these; treat as reported.** Its own conclusion: no permanently-free Chinese VPS could be verified. Do not re-research this.
+
+| Provider | What is offered | Walls / limits (as reported) | Verdict |
+|---|---|---|---|
+| Alibaba Cloud | ~3-month free trial | Identity verification, verified phone, possibly an eligible payment method; trial quota can be used up early; expires | Rejected: trial + verification wall, not $0-forever |
+| Tencent Cloud | 1-month / 7-day trials | Trial only, expires | Rejected: too short |
+| Huawei Cloud | Mainland-China promotion | Real-name verification a US account generally cannot complete | Rejected: unreachable |
+
+Rule applied: nothing that expires, needs a card, or needs real-name verification can be OMNI's permanent home. Also relevant: a Chinese-hosted server holding personal conversations/memories and a model API key is a data-residency and privacy question the owner has not agreed to.
+
+What we kept from that research: its final architecture - **separate free-tier compute, database and model** - which is the direction in `docs/POSTGRES_PLAN.md` (Render for compute, Neon for the database, Groq for the model).
+
+## Neon free Postgres (official pricing page, fetched 2026-10-20 via a summarizer; re-verify)
+| Item | Finding |
+|---|---|
+| Plan | Free plan, described as permanent (not a trial); **no card required** |
+| Storage | 1 GB Postgres per project (20 GB across projects); up to 100 projects |
+| Compute | 100 CU-hours per project per month; scale-to-zero always on (suspends after 5 min idle; cannot be disabled) |
+| Egress | 5 GB per project per month |
+| At the limit | Compute stays suspended until next period; storage over limit blocks writes; neither deletes data |
+| Not stated on the page I read | Cold-start latency; any inactivity deletion policy for free projects - **verify before relying on it** |
