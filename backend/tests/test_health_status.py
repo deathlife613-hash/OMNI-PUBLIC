@@ -27,9 +27,12 @@ def test_status_never_leaks_secrets(make_client):
 def test_status_reports_unavailable_as_null_not_fake(make_client):
     with make_client() as client:
         body = client.get("/api/status").json()
-    assert body["ai"]["model"] is None
+    assert body["ai"]["model"] == "openai/gpt-oss-120b"  # configured default, not a measurement
+    assert body["ai"]["connected"] is None  # never claimed until a real test succeeds
     assert body["ai"]["api_key_configured"] is False
     assert body["database"]["ok"] is True
+    with make_client(ai_model="") as client:  # explicit "no default" still reports null
+        assert client.get("/api/status").json()["ai"]["model"] is None
 
 
 def test_status_reports_integrations_without_secrets(make_client):
