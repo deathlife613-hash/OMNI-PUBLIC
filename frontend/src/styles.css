@@ -134,3 +134,8 @@ a { color: var(--accent); }
 
 pre.diff { background: var(--input-bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; overflow: auto; max-height: 280px; font-size: 12px; white-space: pre; }
 :root[data-theme="light"] pre.diff { background: #f4f7fb; }
+
+/* ---- OMNI core motif ---- */
+.omni-core { display: block; max-width: 100%; }
+.brand-core { filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.5)); }
+:root[data-theme="light"] .omni-core { filter: none; opacity: 0.9; }

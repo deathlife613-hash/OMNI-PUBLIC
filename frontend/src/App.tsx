@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Chat from "./Chat";
+import OmniCore from "./OmniCore";
 import Dashboard, { type View } from "./Dashboard";
 import Settings, { applyTheme, loadTheme } from "./Settings";
 import MemoryCenter from "./Memory";
@@ -105,7 +106,7 @@ export default function App() {
     <div className="shell">
       <header className="top">
         <div className="brand">
-          <span className="orb" aria-hidden="true" />
+          <OmniCore size={34} points={70} className="brand-core" />
           <strong>OMNI</strong>
           <span className="muted">v{status?.version ?? "—"}</span>
         </div>
