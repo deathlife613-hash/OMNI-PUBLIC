@@ -375,7 +375,7 @@ def _pool_for(target: PgTarget):
             min_size=0,  # no connection at startup: Neon may be asleep and the app must still boot
             max_size=5,
             max_idle=240,  # drop idle connections before Neon's 5-minute suspend would kill them
-            timeout=20,
+            timeout=10,  # also bounds /api/health when the database is unreachable
             check=ConnectionPool.check_connection,  # test a pooled connection before handing it out
             configure=configure,
             kwargs={"row_factory": dict_row, "prepare_threshold": None},  # None: safe behind PgBouncer-style poolers
