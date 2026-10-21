@@ -126,3 +126,12 @@ def test_literals_with_keywords_and_question_marks_round_trip_unchanged(target):
         conn.execute("INSERT INTO notes(title, body) VALUES ('it''s? LIKE 50%', ?)", ("x",))  # literal inside the SQL itself
         rows = {r["title"]: r["body"] for r in conn.execute("SELECT title, body FROM notes /* why? */ WHERE id > ?", (0,)).fetchall()}
     assert rows["t"] == text and rows["it's? LIKE 50%"] == "x"
+
+
+def test_result_is_iterable_like_a_sqlite_cursor(target):
+    from app.core import db
+
+    db.init_db(target)
+    with db.session(target) as conn:
+        conn.execute("INSERT INTO notes(title, body) VALUES (?, ?)", ("a", "b"))
+        assert [r["title"] for r in conn.execute("SELECT title FROM notes")] == ["a"]

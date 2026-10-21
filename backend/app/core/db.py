@@ -353,6 +353,9 @@ class _PgResult:
     def fetchall(self):
         return self._cur.fetchall()
 
+    def __iter__(self):  # parity with sqlite3 cursors: `for row in conn.execute(...)`
+        return iter(self._cur.fetchall())
+
 
 class PgConn:
     """Gives a psycopg connection the small slice of the sqlite3 connection API that OMNI's code uses."""
