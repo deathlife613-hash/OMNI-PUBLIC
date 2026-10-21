@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from app.core import db
-from app.core.config import Settings, get_settings
+from app.core.config import DEFAULT_MODELS, Settings, get_settings
 from app.models.base import Provider, ProviderError
 from app.models.registry import build_provider
 from app.security.auth import require_auth
@@ -25,7 +25,11 @@ def resolve_provider(request: Request, settings: Settings) -> Provider:
 
 
 def effective_model(settings: Settings) -> str:
-    return db.get_meta(settings.db_path, "ai_model") or settings.ai_model
+    if settings.ai_model is None:
+        configured = DEFAULT_MODELS.get(settings.ai_provider, "")
+    else:
+        configured = settings.ai_model
+    return db.get_meta(settings.db_path, "ai_model") or configured
 
 
 def _http(e: ProviderError) -> HTTPException:

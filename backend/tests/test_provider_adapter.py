@@ -134,3 +134,10 @@ def test_free_only_filters_models_and_blocks_paid_without_http_call():
 def test_allow_paid_flag_lifts_the_guard():
     p = make(lambda r: httpx.Response(200, text=sse("ok")), free_only=lambda m: False, allow_paid=True)
     assert run(collect(p, model="paid-model")) == ["ok"]
+
+
+def test_non_chat_models_are_hidden_from_the_list():
+    ids = ["whisper-large-v3", "canopylabs/orpheus-v1-english", "meta-llama/llama-prompt-guard-2-22m",
+           "openai/gpt-oss-safeguard-20b", "openai/gpt-oss-120b", "allam-2-7b"]
+    p = make(lambda r: httpx.Response(200, json={"data": [{"id": i} for i in ids]}))
+    assert [m.id for m in run(p.list_models())] == ["allam-2-7b", "openai/gpt-oss-120b"]

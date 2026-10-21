@@ -26,6 +26,15 @@ def _short(text: str, n: int = 200) -> str:
     return text if len(text) <= n else text[:n] + "…"
 
 
+# Catalog entries that are not text-chat models (speech, TTS, safety classifiers, embeddings).
+NON_CHAT_MARKERS = ("whisper", "orpheus", "guard", "safeguard", "tts", "embed", "moderation", "playai")
+
+
+def is_chat_model(model_id: str) -> bool:
+    mid = model_id.lower()
+    return not any(m in mid for m in NON_CHAT_MARKERS)
+
+
 class OpenAICompatProvider(Provider):
     def __init__(
         self,
@@ -100,7 +109,7 @@ class OpenAICompatProvider(Provider):
         models = []
         for item in r.json().get("data", []):
             mid = item.get("id")
-            if not mid or not self._is_allowed(mid):
+            if not mid or not self._is_allowed(mid) or not is_chat_model(mid):
                 continue
             ctx = item.get("context_window") or item.get("context_length")
             models.append(ModelInfo(id=mid, context_window=ctx if isinstance(ctx, int) else None))

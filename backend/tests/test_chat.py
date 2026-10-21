@@ -123,3 +123,15 @@ def test_input_validation(make_client):
     assert c.post(f"/api/conversations/{cid}/messages", json={"content": ""}).status_code == 422
     assert c.post(f"/api/conversations/{cid}/messages", json={"content": "x" * 9000}).status_code == 422
     assert c.post("/api/conversations/missing/messages", json={"content": "hi"}).status_code == 404
+
+
+def test_recommended_default_model_applies_unless_overridden(make_client):
+    fake = FakeProvider()
+    c = make_client(provider=fake)  # ai_model not set -> Groq default
+    assert c.get("/api/provider").json()["model"] == "openai/gpt-oss-120b"
+    send(c, new_conv(c))
+    assert fake.calls[0][1] == "openai/gpt-oss-120b"
+    c2 = make_client(provider=FakeProvider(), ai_model="")  # explicit empty = no default
+    assert c2.get("/api/provider").json()["model"] is None
+    assert c2.put("/api/provider/model", json={"model": "m2"}).status_code == 200  # runtime choice still wins
+    assert c2.get("/api/provider").json()["model"] == "m2"

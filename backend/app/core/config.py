@@ -10,6 +10,9 @@ APP_VERSION = "1.0.0-rc1"
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 
 
+DEFAULT_MODELS = {"groq": "openai/gpt-oss-120b"}  # verified on Groq 2026-10-20; catalogs change, so it is only a default
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="OMNI_", env_file=(".env", "../.env"), extra="ignore"
@@ -24,7 +27,7 @@ class Settings(BaseSettings):
 
     # AI provider
     ai_provider: str = "groq"  # groq | openrouter
-    ai_model: str = ""  # default model; can be changed at runtime from the UI
+    ai_model: str | None = None  # None = recommended default for the provider; "" = none; changeable in the UI
     ai_base_url: str = ""  # override only if you know the endpoint is free to you
     ai_api_key: str = Field(default="", repr=False)
     allow_paid_providers: bool = False  # hard guard; never flipped automatically
