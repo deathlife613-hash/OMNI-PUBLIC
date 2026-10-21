@@ -6,8 +6,9 @@
   --panel-solid: #08142c;
   --line: rgba(34, 211, 238, 0.18);
   --line-strong: rgba(34, 211, 238, 0.42);
-  --text: #e2f1fb;
-  --muted: #8aa4bd;
+  --text: #edf5ff;
+  --text-2: #b9c9de;
+  --muted: #9aadc5;
   --accent: #22d3ee;
   --accent-2: #38bdf8;
   --magenta: #d946ef;
@@ -176,3 +177,7 @@ ul.plain li { border-bottom-color: var(--line); }
 :root[data-theme="light"] .hero { background: none; }
 :root[data-theme="light"] .hero::after { display: none; }
 :root[data-theme="light"] .pill { background: none; }
+
+/* Guardrail (design review): surfaces that hold text input or conversation are opaque, never glass over art. */
+.chat .card, .stack .card, .login .card, .main { backdrop-filter: none; -webkit-backdrop-filter: none; }
+.chat .card, .stack .card, .login .card { background: var(--panel-solid); }

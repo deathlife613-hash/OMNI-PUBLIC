@@ -26,8 +26,9 @@ export default function OmniCore({ size = 220, points = 320, ambient = false, cl
     const R = size * 0.3;
     const c = size / 2;
     // Fibonacci sphere: even point spread, deterministic (no Math.random in the render path).
-    const pts = Array.from({ length: points }, (_, i) => {
-      const y = 1 - (2 * (i + 0.5)) / points;
+    const n = window.innerWidth < 720 ? Math.round(points * 0.6) : points; // fewer particles on phones
+    const pts = Array.from({ length: n }, (_, i) => {
+      const y = 1 - (2 * (i + 0.5)) / n;
       const r = Math.sqrt(1 - y * y);
       const th = i * 2.399963229728653;
       return { x: Math.cos(th) * r, y, z: Math.sin(th) * r, m: i % 19 === 0 };
@@ -54,6 +55,33 @@ export default function OmniCore({ size = 220, points = 320, ambient = false, cl
       ctx.fillStyle = glow;
       ctx.fillRect(0, 0, size, size);
 
+      const ringPass = (front: boolean) => {
+        ctx.lineWidth = 0.7;
+        for (const r of rings) {
+          ctx.save();
+          ctx.translate(c, c);
+          ctx.rotate(r.tilt);
+          const rx = R * r.rx * 0.62;
+          const ry = R * r.rx * 0.2;
+          ctx.strokeStyle = `rgba(${CYAN},${front ? 0.5 : 0.18})`;
+          ctx.beginPath();
+          // lower half of the ring passes in front of the orb, upper half behind it
+          if (front) ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI);
+          else ctx.ellipse(0, 0, rx, ry, 0, Math.PI, 2 * Math.PI);
+          ctx.stroke();
+          const ang = r.phase + t * 0.001 * r.speed;
+          if ((Math.sin(ang) > 0) === front) {
+            ctx.fillStyle = `rgba(${SKY},0.95)`;
+            ctx.shadowColor = `rgb(${CYAN})`;
+            ctx.shadowBlur = 8; // bloom on the 3 ring nodes only (expensive)
+            ctx.beginPath();
+            ctx.arc(Math.cos(ang) * rx, Math.sin(ang) * ry, 1.8, 0, 6.2832);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+      };
+      ringPass(false);
       const a = t * 0.00022;
       const ca = Math.cos(a);
       const sa = Math.sin(a);
@@ -66,24 +94,7 @@ export default function OmniCore({ size = 220, points = 320, ambient = false, cl
         ctx.arc(c + x * R, c + p.y * R, 0.5 + depth * 1.1, 0, 6.2832);
         ctx.fill();
       }
-      ctx.lineWidth = 0.7;
-      for (const r of rings) {
-        ctx.save();
-        ctx.translate(c, c);
-        ctx.rotate(r.tilt);
-        ctx.strokeStyle = `rgba(${CYAN},0.28)`;
-        ctx.beginPath();
-        ctx.ellipse(0, 0, R * r.rx * 0.62, R * r.rx * 0.2, 0, 0, 6.2832);
-        ctx.stroke();
-        const ang = r.phase + t * 0.001 * r.speed;
-        ctx.fillStyle = `rgba(${SKY},0.95)`;
-        ctx.shadowColor = `rgb(${CYAN})`;
-        ctx.shadowBlur = 8;
-        ctx.beginPath();
-        ctx.arc(Math.cos(ang) * R * r.rx * 0.62, Math.sin(ang) * R * r.rx * 0.2, 1.8, 0, 6.2832);
-        ctx.fill();
-        ctx.restore();
-      }
+      ringPass(true);
       if (bits.length) {
         ctx.font = "11px ui-monospace, Menlo, Consolas, monospace";
         for (const b of bits) {
