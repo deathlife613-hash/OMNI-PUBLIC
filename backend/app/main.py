@@ -11,6 +11,7 @@ from app.core.config import APP_VERSION, Settings, get_settings
 from app.models.base import Provider
 from app.security.limits import ModelCallLimiter, SecurityHeaders
 from app.services.search import SearchGuard, SearchProvider
+from app.services.n8n import N8NClient
 from app.services.sync import build_sync
 from app.services.tts import TTSGuard, build_tts
 from app.services.usage import UsageTracker
@@ -22,6 +23,7 @@ def create_app(
     search_override: SearchProvider | None = None,
     sync_transport=None,
     tts_transport=None,
+    n8n_transport=None,
 ) -> FastAPI:
     """Build the app. Passing settings/provider explicitly keeps tests isolated."""
     settings = settings or get_settings()
@@ -53,6 +55,7 @@ def create_app(
     app.state.sync = sync
     app.state.tts = build_tts(settings, tts_transport)
     app.state.tts_guard = TTSGuard(settings.tts_cache_entries)
+    app.state.n8n = N8NClient(settings, n8n_transport)
     app.add_middleware(SecurityHeaders)
 
     app.add_middleware(

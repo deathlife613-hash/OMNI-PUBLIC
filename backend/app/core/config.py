@@ -78,6 +78,15 @@ class Settings(BaseSettings):
     tts_cache_entries: int = 64
     tts_timeout_s: float = 30
 
+    # n8n outbound webhooks (SECRET-BEARING urls). JSON object name -> https url, e.g. {"daily":"https://n8n.example/webhook/abc"}.
+    # Env only; never returned by any route, logged, or shown in status (names and counts only).
+    n8n_webhooks: str = Field(default="", repr=False)
+    n8n_auth_header: str = ""  # optional header name matching n8n's Webhook "Header auth"
+    n8n_auth_value: str = Field(default="", repr=False)
+    n8n_timeout_s: float = 20
+    n8n_max_payload_bytes: int = 20000
+    n8n_response_max_chars: int = 2000
+
     # Folder OMNI may search/read (read-only, .txt/.md/.csv). Empty = document tools disabled.
     docs_dir: Path | None = None
     tool_timeout_s: float = 5

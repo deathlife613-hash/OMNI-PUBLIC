@@ -41,6 +41,6 @@ def test_status_reports_integrations_without_secrets(make_client):
     c = make_client(search_provider="tavily", search_api_key="tvly-SECRETSECRETSECRET")
     r = c.get("/api/status")
     integ = r.json()["integrations"]
-    assert integ["tts"]["configured"] is False and integ["tts"]["engine"] == "browser"  # voice stays browser-native by default
-    assert {k: v for k, v in integ.items() if k != "tts"} == {"search": {"configured": True, "provider": "tavily"}, "documents": {"enabled": False}, "sync": {"configured": False}}
+    assert integ["n8n"]["configured"] is False and integ["tts"]["configured"] is False and integ["tts"]["engine"] == "browser"  # voice stays browser-native by default
+    assert {k: v for k, v in integ.items() if k not in ("tts", "n8n")} == {"search": {"configured": True, "provider": "tavily"}, "documents": {"enabled": False}, "sync": {"configured": False}}
     assert "SECRETSECRET" not in r.text

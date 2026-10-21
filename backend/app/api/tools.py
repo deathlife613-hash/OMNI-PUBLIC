@@ -1,9 +1,10 @@
 """Tool endpoints: list registered tools and run one with validated input.
 Consequential tools need confirm=true. Every run is audit-logged (tool name + outcome only, no arguments)."""
 import asyncio
+from types import SimpleNamespace
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, ValidationError
 
 from app.core import db
@@ -37,7 +38,7 @@ def audit(settings: Settings = Depends(get_settings)) -> list[dict]:
 
 
 @router.post("/tools/{name}/run")
-async def run_tool(name: str, body: RunBody, settings: Settings = Depends(get_settings)) -> dict:
+async def run_tool(name: str, body: RunBody, request: Request, settings: Settings = Depends(get_settings)) -> dict:
     tool = REGISTRY.get(name)
     if tool is None:
         raise HTTPException(404, "Unknown tool.")
@@ -49,7 +50,7 @@ async def run_tool(name: str, body: RunBody, settings: Settings = Depends(get_se
     if tool.needs_confirmation and not body.confirm:
         _audit(settings.db_path, name, "confirmation_required")
         raise HTTPException(409, {"kind": "needs_confirmation", "message": f"'{name}' changes or deletes data. Resend with confirm=true to proceed."})
-    ctx = ToolContext(settings.db_path, settings.docs_dir, lambda: datetime.now(timezone.utc))
+    ctx = ToolContext(settings.db_path, settings.docs_dir, lambda: datetime.now(timezone.utc), SimpleNamespace(n8n=request.app.state.n8n))
     try:
         result = await run_with_timeout(tool, ctx, args, settings.tool_timeout_s)
     except ToolError as e:

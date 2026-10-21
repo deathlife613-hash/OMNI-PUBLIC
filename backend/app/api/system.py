@@ -75,6 +75,7 @@ def status(request: Request, settings: Settings = Depends(get_settings)) -> dict
                 "provider": settings.search_provider or None,
             },
             "documents": {"enabled": bool(settings.docs_dir)},
+            "n8n": request.app.state.n8n.state(),
             "tts": tts_state(settings, request.app.state.tts_guard, request.app.state.tts is not None),
             "sync": request.app.state.sync.state() if request.app.state.sync else {"configured": False},
         },

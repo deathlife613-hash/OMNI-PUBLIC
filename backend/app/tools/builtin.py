@@ -231,6 +231,19 @@ def doc_read(ctx, a: DocReadIn):
     return {"notice": UNTRUSTED, "path": a.path, "truncated": len(text) > 8000, "text": text[:8000]}
 
 
+# ---------------------------------------------------------------- n8n webhook (external, consequential)
+class WebhookIn(BaseModel):
+    target: str = Field(min_length=1, max_length=40, description="Name of a configured webhook (never a URL).")
+    payload: dict = Field(default_factory=dict, description="JSON object to send. Only what you pass here is sent.")
+
+
+async def webhook_post(ctx: ToolContext, a: WebhookIn):
+    n8n = getattr(ctx.services, "n8n", None)
+    if n8n is None:
+        raise ToolError("n8n webhooks are not configured on this server.")
+    return await n8n.post(a.target, a.payload)  # no ambient context is attached; one call = one POST
+
+
 TOOLS = [
     Tool("calculator", "Evaluate an arithmetic expression safely.", CalcIn, calculator),
     Tool("current_datetime", "Current date/time in a timezone.", DateTimeIn, current_datetime),
@@ -244,5 +257,10 @@ TOOLS = [
     Tool("note_search", "Search saved notes.", QueryIn, note_search),
     Tool("doc_search", "Search the authorized documents folder (read-only).", QueryIn, doc_search),
     Tool("doc_read", "Read one authorized document (first 8000 chars).", DocReadIn, doc_read),
+    Tool(
+        "webhook_post",
+        "POST a JSON payload to a named n8n workflow webhook (external action; needs confirmation; no automatic retry).",
+        WebhookIn, webhook_post, needs_confirmation=True, timeout_s=120.0, is_async=True,
+    ),
 ]
 REGISTRY = {t.name: t for t in TOOLS}

@@ -109,7 +109,7 @@ def make_client(tmp_path):
     reset_throttle()
     schemas: list[str] = []
 
-    def _make(provider=None, search=None, sync_transport=None, tts_transport=None, **overrides) -> TestClient:
+    def _make(provider=None, search=None, sync_transport=None, tts_transport=None, n8n_transport=None, **overrides) -> TestClient:
         base = dict(
             env="development",
             db_path=tmp_path / "test.db",
@@ -125,7 +125,7 @@ def make_client(tmp_path):
         base.update(overrides)
         settings = Settings(_env_file=None, **base)
         db.init_db(settings.db_path)  # TestClient without `with` skips the lifespan hook
-        return TestClient(create_app(settings, provider_override=provider, search_override=search, sync_transport=sync_transport, tts_transport=tts_transport))
+        return TestClient(create_app(settings, provider_override=provider, search_override=search, sync_transport=sync_transport, tts_transport=tts_transport, n8n_transport=n8n_transport))
 
     yield _make
 
