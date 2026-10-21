@@ -133,3 +133,10 @@ Groq catalog for this account now: allam-2-7b, canopylabs/orpheus-*, meta-llama/
 Recommended default: `openai/gpt-oss-120b`. Many listed models are not chat models (whisper, orpheus TTS, prompt-guard, safeguard): the model picker should hide/flag them (TODO).
 Known gap: Colab e2e needs `pip install playwright && playwright install chromium` on a fresh runtime (add to notebook steps).
 Next: plan-JSON reliability test of agents with gpt-oss-120b; filter non-chat models; deployment (Oracle/other); xAI key revocation is the user's.
+
+## Verification update (2026-10-20 evening, reported from Colab @ c558470)
+- Backend: 155 passed. Frontend build OK. Browser e2e: 21/21 (Playwright install step added to the notebook).
+- Model picker hides non-chat models; default `openai/gpt-oss-120b` confirmed via `/api/provider`. `/api/status` reports the configured default; `connected` stays null until a real test.
+- Live agent task on gpt-oss-120b: 5 steps (research, planning, documentation, review, documentation) succeeded with real output. Single run; reliability across many runs untested.
+- Demo instance: Colab + cloudflared, production mode, token auth. Ephemeral — data lost on runtime reset; back up regularly.
+Remaining: permanent deployment (Oracle, owner must complete card verification), Docker build/compose, voice with a real mic, Ollama/HF adapters, wake word, xAI key revocation (owner).

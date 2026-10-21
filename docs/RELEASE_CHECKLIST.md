@@ -53,7 +53,7 @@ Chromium). **NOT TESTED** = never executed. **NOT IMPLEMENTED** = not built. Not
 ### Quality
 | Criterion | Result |
 |---|---|
-| Automated tests run successfully | PASS (153 backend, 7 frontend unit, 19 browser e2e steps) |
+| Automated tests run successfully | PASS (155 backend @ c558470, 7 frontend unit, 21 browser e2e steps; reported from Colab) |
 | Failures logged safely | PASS (audit log has no arguments/secrets) |
 | No fake success messages | PASS to the extent tested; unavailable metrics shown as unavailable |
 | README has complete setup guide | PASS |
@@ -76,7 +76,7 @@ Chromium). **NOT TESTED** = never executed. **NOT IMPLEMENTED** = not built. Not
 - Wake word; local Whisper; Ollama & Hugging Face adapters; automatic provider fallback; conversation summarization;
   Markdown/code rendering with copy buttons in chat (plain text + Copy button only); PWA install; hosted-DB backend;
   parallel agents; command execution / test running / Git integration; code-executing skills; Testing/DevOps agents.
-- Plan-JSON reliability of the free model for agents is unknown until tried with a real model.
+- Agent plan-JSON reliability: one live run on gpt-oss-120b succeeded (5 steps, real output; reported from Colab 2026-10-20). One run is not a reliability guarantee.
 - Reminders only fire while the app is open.
 
 ## How to verify yourself (≈10 minutes)
