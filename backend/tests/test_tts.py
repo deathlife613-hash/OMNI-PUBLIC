@@ -9,7 +9,7 @@ def tts_client(make_client, handler=None, **extra):
 
     def default(request: httpx.Request) -> httpx.Response:
         calls.append(request)
-        return httpx.Response(200, content=b"ID3-fake-mp3")
+        return httpx.Response(200, content=b"ID3-fake-mp3", headers={"content-type": "audio/mpeg"})
 
     def wrapped(request: httpx.Request) -> httpx.Response:
         if handler is None:
@@ -76,7 +76,7 @@ def test_limits_per_reply_and_monthly_cap_protect_the_free_allowance(make_client
 
 
 def test_provider_errors_become_clear_notices_and_are_not_charged_or_cached(make_client):
-    for status, kind in [(401, "auth"), (402, "quota"), (429, "rate_limit"), (422, "bad_request"), (500, "unavailable")]:
+    for status, kind in [(401, "auth"), (403, "auth"), (402, "payment"), (429, "rate_limit"), (422, "bad_request"), (500, "provider_error"), (503, "provider_error")]:
         c, calls = tts_client(make_client, handler=lambda req, s=status: httpx.Response(s, text=f"boom {SECRET}"))
         r = c.post("/api/voice/speak", json={"text": "hello"})
         assert r.json()["detail"]["kind"] == kind, status
@@ -96,7 +96,7 @@ def test_timeouts_and_network_failures_are_reported(make_client):
         raise httpx.ConnectError("x")
 
     c, _ = tts_client(make_client, handler=down)
-    assert c.post("/api/voice/speak", json={"text": "hi"}).json()["detail"]["kind"] == "unavailable"
+    assert c.post("/api/voice/speak", json={"text": "hi"}).json()["detail"]["kind"] == "unreachable"
 
 
 def test_key_never_appears_in_status_or_settings_repr(make_client):
@@ -111,3 +111,61 @@ def test_requires_auth_when_a_token_is_set(make_client):
     c, _ = tts_client(make_client, access_token="tok")
     assert c.post("/api/voice/speak", json={"text": "hi"}).status_code == 401
     assert c.get("/api/voice/status", headers={"Authorization": "Bearer tok"}).status_code == 200
+
+
+def test_402_is_not_reported_as_quota_exhausted(make_client):
+    c, _ = tts_client(make_client, handler=lambda req: httpx.Response(402, text="x"))
+    d = c.post("/api/voice/speak", json={"text": "hi"}).json()["detail"]
+    assert d["kind"] == "payment" and "exact cause is not known" in d["message"] and "used up" in d["message"]  # hedged, not asserted
+
+
+def test_no_automatic_retry_after_timeout_or_error(make_client):
+    def boom(req):
+        raise httpx.ReadTimeout("t")
+
+    c, calls = tts_client(make_client, handler=boom)
+    assert c.post("/api/voice/speak", json={"text": "hi"}).json()["detail"]["kind"] == "timeout"
+    assert len(calls) == 1  # the first request may have been billed; never blindly resend
+    c, calls = tts_client(make_client, handler=lambda req: httpx.Response(500))
+    c.post("/api/voice/speak", json={"text": "hi"})
+    assert len(calls) == 1
+
+
+def test_a_200_that_is_not_audio_is_never_treated_as_audio(make_client):
+    c, _ = tts_client(make_client, handler=lambda req: httpx.Response(200, json={"detail": "oops"}))
+    r = c.post("/api/voice/speak", json={"text": "hi"})
+    assert r.json()["detail"]["kind"] == "bad_audio"
+    assert c.get("/api/voice/status").json()["chars_used_month_estimate"] == 0  # not charged, not cached
+    assert c.post("/api/voice/speak", json={"text": "hi"}).json()["detail"]["kind"] == "bad_audio"
+
+
+def test_concurrent_identical_requests_share_one_billable_call():
+    import asyncio
+
+    from app.api.voice import speak, SpeakBody
+    from app.core.config import Settings
+    from app.services.tts import ElevenLabsTTS, TTSGuard
+
+    n = {"calls": 0}
+
+    async def slow(request):
+        n["calls"] += 1
+        await asyncio.sleep(0.05)
+        return httpx.Response(200, content=b"A", headers={"content-type": "audio/mpeg"})
+
+    cfg = Settings(_env_file=None, tts_provider="elevenlabs", tts_api_key="k", tts_voice_id="v")
+
+    class App:  # minimal stand-in for request.app.state
+        class state:
+            tts = ElevenLabsTTS(cfg, httpx.MockTransport(slow))
+            tts_guard = TTSGuard()
+
+    class Req:
+        app = App
+
+    async def go():
+        return await asyncio.gather(*[speak(SpeakBody(text="dup"), Req, cfg) for _ in range(3)])
+
+    out = asyncio.run(go())
+    assert n["calls"] == 1 and all(r.body == b"A" for r in out)
+    assert App.state.tts_guard.generations == 1 and App.state.tts_guard.chars_used == 3

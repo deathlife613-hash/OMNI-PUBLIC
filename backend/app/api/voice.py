@@ -1,4 +1,6 @@
 """Optional server-side TTS. Absent configuration changes nothing elsewhere in OMNI."""
+import asyncio
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
 from pydantic import BaseModel
@@ -39,11 +41,26 @@ async def speak(body: SpeakBody, request: Request, settings: Settings = Depends(
     if audio is None:
         if guard.chars_used + len(text) > settings.tts_monthly_char_cap:
             raise _err(TTSError("monthly_cap", f"OMNI's own monthly voice limit ({settings.tts_monthly_char_cap} characters, an estimate) would be exceeded. Use the browser voice.", 429))
-        try:
-            audio = await tts.synthesize(text)
-        except TTSError as e:
-            raise _err(e) from None
-        guard.add_chars(len(text))  # charged only after a successful generation
-        guard.generations += 1
-        guard.put(key, audio)
+        pending = guard.inflight.get(key)
+        if pending is not None:  # a duplicate click/effect while the same text is generating: share that one request
+            try:
+                audio = await asyncio.shield(pending)
+            except TTSError as e:
+                raise _err(e) from None
+            cached = True
+        else:
+            fut = asyncio.get_running_loop().create_future()
+            guard.inflight[key] = fut
+            try:
+                audio = await tts.synthesize(text)
+            except TTSError as e:
+                fut.set_exception(e)
+                fut.exception()  # mark retrieved so asyncio does not log it when nobody awaits
+                raise _err(e) from None
+            finally:
+                guard.inflight.pop(key, None)
+            fut.set_result(audio)
+            guard.add_chars(len(text))  # charged only after a successful generation
+            guard.generations += 1
+            guard.put(key, audio)
     return Response(audio, media_type="audio/mpeg", headers={"X-OMNI-TTS-Cache": "hit" if cached else "miss"})

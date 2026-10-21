@@ -14,7 +14,7 @@ from app.core.config import Settings
 
 
 class TTSError(Exception):
-    """kind: not_configured | too_long | empty | monthly_cap | auth | quota | rate_limit | bad_request | timeout | unavailable"""
+    """kind: not_configured | too_long | empty | monthly_cap | auth | payment | rate_limit | bad_request | timeout | unreachable | provider_error | bad_audio"""
 
     def __init__(self, kind: str, message: str, status: int = 502):
         super().__init__(message)
@@ -32,6 +32,7 @@ class TTSGuard:
         self.cache: OrderedDict[str, bytes] = OrderedDict()
         self.cache_hits = 0
         self.generations = 0
+        self.inflight: dict[str, asyncio.Future] = {}  # identical concurrent requests share one billable call
         self._month = ""
         self._chars = 0
 
@@ -80,6 +81,8 @@ class ElevenLabsTTS:
         self._slots = asyncio.Semaphore(2)  # free plan allows 2 concurrent requests
 
     async def synthesize(self, text: str) -> bytes:
+        """One call = at most one billable request. There is deliberately NO automatic retry: after a timeout
+        the first request may have succeeded and been billed, so retrying could double-spend."""
         url = f"{self._base}/v1/text-to-speech/{self.voice_id}"
         try:
             async with self._slots, httpx.AsyncClient(transport=self._transport, timeout=self._timeout) as c:
@@ -92,19 +95,20 @@ class ElevenLabsTTS:
         except httpx.TimeoutException:
             raise TTSError("timeout", "The voice service timed out.", 504) from None
         except httpx.HTTPError:
-            raise TTSError("unavailable", "Could not reach the voice service.", 502) from None
+            raise TTSError("unreachable", "Could not reach the voice service.", 502) from None
         if r.status_code in (401, 403):
             raise TTSError("auth", "The voice service rejected the API key (or the free plan has no API access).", 502)
         if r.status_code == 402:
-            raise TTSError("quota", "The voice service says the free allowance is used up or the plan does not include this. Use the browser voice instead.", 402)
+            # 402 = "payment required". Its exact cause on the free plan is unobserved, so do not claim "quota exhausted".
+            raise TTSError("payment", "The voice service answered 402 (payment/plan required). The plan may not include this, or its allowance may be used up; the exact cause is not known. Use the browser voice instead.", 402)
         if r.status_code == 429:
             raise TTSError("rate_limit", "The voice service is rate limited. Try again shortly.", 429)
         if r.status_code in (400, 404, 422):
             raise TTSError("bad_request", "The voice service rejected the request. Check OMNI_TTS_VOICE_ID and OMNI_TTS_MODEL.", 502)
         if r.status_code >= 400:
-            raise TTSError("unavailable", f"The voice service returned an error ({r.status_code}).", 502)
-        if not r.content:
-            raise TTSError("unavailable", "The voice service returned no audio.", 502)
+            raise TTSError("provider_error", f"The voice service returned an error ({r.status_code}).", 502)
+        if not r.headers.get("content-type", "").lower().startswith("audio/") or not r.content:
+            raise TTSError("bad_audio", "The voice service did not return audio. Nothing was played or charged.", 502)  # never treat a body as audio unless it is
         return r.content
 
 
