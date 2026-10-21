@@ -186,7 +186,7 @@ Commits: 7b8223f (theme tokens) -> 773e952 (OmniCore canvas orb + header) -> 4cf
 - Postgres: verified in Colab on local PostgreSQL 16 (see above); real Neon run still pending.
 - Parked: deployment (Render email verification, Neon connection string) awaits Sebastian; Ollama live test in flight.
 
-## ElevenLabs TTS adapter (backend) - WRITTEN, NOT VERIFIED
+## ElevenLabs TTS adapter (backend) - VERIFIED AT MOCKED-PROVIDER LEVEL (Colab, 1cac5ef); LIVE test pending a real key
 Server-side only; off unless `OMNI_TTS_PROVIDER=elevenlabs` + `OMNI_TTS_API_KEY` + `OMNI_TTS_VOICE_ID` are set (key is a server env secret, never in repo/browser/logs/errors). With none set, OMNI behaves as before: `GET /api/voice/status` and `/api/status` -> `integrations.tts` report "TTS: not configured. Using browser voices." and `POST /api/voice/speak` returns 503 `not_configured`.
 - Endpoints: `GET /api/voice/status`, `POST /api/voice/speak {text}` -> `audio/mpeg` (`X-OMNI-TTS-Cache: hit|miss`). Both behind the normal auth.
 - Free-credit guards: per-reply char cap (1500), own monthly char counter (cap 8000, an ESTIMATE, resets on restart, charged only after success), in-memory LRU cache keyed by (voice, model, text) so repeats are free, 2-concurrent semaphore.
@@ -198,3 +198,7 @@ Server-side only; off unless `OMNI_TTS_PROVIDER=elevenlabs` + `OMNI_TTS_API_KEY`
 - Ollama 0.40.7, model `qwen2.5:0.5b` (398 MB). Direct OpenAI-compatible endpoints: `/v1/models` lists the model; `/v1/chat/completions` returned a real completion.
 - Through OMNI (`OMNI_AI_PROVIDER=ollama`, `OMNI_AI_BASE_URL=http://localhost:11434/v1`, `OMNI_AI_MODEL=qwen2.5:0.5b`, keyless): health 200; `POST /api/provider/test` -> ok, 1 model, 97 ms; `/api/provider/models` lists it; chat streamed deltas + done event with a real reply.
 - Still UNVERIFIED: Ollama Cloud (needs a key), Hugging Face adapter (needs Sebastian's account; free accounts have no included credits, so expect 402 / not $0), ElevenLabs TTS (mock-tested only; pending Colab run of 1cac5ef and a real key).
+### TTS verification (Colab, Mitch, fresh clone, HEAD 1cac5ef)
+- Full scrubbed suite: 205 passed, 8 skipped (up from 192/8, zero regressions). `tests/test_tts.py`: 13/13 (no auto-retry: timeout and 500 each = 1 outbound call; 3 concurrent identical requests = 1 generation; 402 not reported as quota; error mapping 401/403 auth, 402 payment, 429 rate_limit, 422 bad_request, 500/503 provider_error; cache; monthly cap).
+- Key hygiene verified by grep: the key is read only in config (`repr=False`) and used only as the outbound `xi-api-key` header in `services/tts.py`; no hits in `backend/app/api`; status endpoints expose state fields only; no ElevenLabs/key references in frontend source.
+- STILL UNVERIFIED: live generation, free-plan API access, model/voice ids (pending Sebastian's key; plan A-F, 150-char cap in `docs/VOICE_VERIFICATION.md`). Frontend voice-engine switch not built.
