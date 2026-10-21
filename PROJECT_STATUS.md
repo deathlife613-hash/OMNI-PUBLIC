@@ -175,5 +175,13 @@ Rules from the owner: `OMNI_DATABASE_URL` flag, SQLite stays default and unchang
 ### E2E note
 - Isolated `--only agents` / `--only skills` runs in the fresh clone were confounded: `frontend/dist` was not built, so the page returned `{"detail":"Not Found"}` while APIs returned 200. They say nothing about the UI or selectors. Re-run with the frontend built is pending; no UI-duplication theory until then. Lesson: e2e preflight should fail fast if `/` isn't the app.
 
-## UI redesign (holographic OMNI core) - WRITTEN, NOT VERIFIED
+## UI redesign (holographic OMNI core) - VERIFIED (Colab, HEAD 08aff84)
 Commits: 7b8223f (theme tokens) -> 773e952 (OmniCore canvas orb + header) -> 4cf77a9 (dashboard hero + magenta grid, chat empty state, glow accents). Restyle only: no labels/roles/names changed; the orb and hero are `aria-hidden` and contain no text or roles (so `get_by_role("status").first` is still the connection pill). Orb is hand-rolled canvas, ~30 fps cap, paused when tab hidden, static frame under `prefers-reduced-motion`; no new dependencies. Not run: `npm run build`/tsc (npm registry unreachable from my sandbox), vitest, E2E, screenshots. Needs Colab: build + 21/21 E2E + visual comparison to the reference.
+
+### UI redesign verification (Colab, Mitch, fresh clone, HEAD 08aff843352bcf8f5f703d1184a6196097c84851)
+- Frontend: `npm install` RC 0; `npm run build` RC 0 (tsc --noEmit && vite build, 42 modules); standalone tsc clean; vitest 7/7.
+- Backend (scrubbed env): 192 passed, 8 skipped.
+- Playwright E2E: 21/21 passed (incl. agents approve/revert, skills lifecycle, theme switch, mobile no-overflow, no uncaught page errors). This also resolves the earlier two E2E failures: they were environmental (missing `frontend/dist`), not UI bugs; a786887 added the preflight.
+- Screenshots vs the reference: accepted by the owner side as the same family (orb with rings in front and behind, magenta grid floor, glass panels, opaque chat); body bg measured #020617; orb in header 34px / dashboard 280px / chat empty state 150px; no console errors. No polish round requested.
+- Postgres: verified in Colab on local PostgreSQL 16 (see above); real Neon run still pending.
+- Parked: deployment (Render email verification, Neon connection string) awaits Sebastian; Ollama live test in flight.
