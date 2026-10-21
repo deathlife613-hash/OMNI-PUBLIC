@@ -168,3 +168,9 @@ Rules from the owner: `OMNI_DATABASE_URL` flag, SQLite stays default and unchang
 - SQLite regression: 184 passed, 4 skipped, 0 failed. Postgres-mode suite (PostgreSQL 16): 174 passed, 13 skipped, 1 failed (`_PgResult` not iterable) - fixed by making `_PgResult` iterable (sqlite3 parity) + a live test; re-run pending.
 - Live smoke in Postgres mode PASSED: health 200, conversation 201, real Groq reply (gpt-oss-120b), memory 201; server killed and restarted on the same `OMNI_DATABASE_URL` - conversation (4 messages) and memory survived. Steps 1-3: VERIFIED in Colab against local Postgres 16 (except the fix above, re-run pending).
 - Still unverified: translator hardening + edge tests (a760041), export/restore round-trip on Postgres, real Neon (needs Sebastian's account).
+
+### Postgres sign-off update (Colab, Mitch, e8eff32)
+- SQLite suite: 192 passed. Postgres mode (PostgreSQL 16): 186 passed, 0 failures (`_PgResult` fix confirmed). Export/restore round-trip on Postgres PASSED (sentinel conversation + memory present in a fresh DB after restore). Translator hardening and edge tests are included in these runs.
+- Remaining for Postgres sign-off: real Neon run (Sebastian creates the account; `OMNI_DATABASE_URL` as a host env var only).
+### E2E note
+- Isolated `--only agents` / `--only skills` runs in the fresh clone were confounded: `frontend/dist` was not built, so the page returned `{"detail":"Not Found"}` while APIs returned 200. They say nothing about the UI or selectors. Re-run with the frontend built is pending; no UI-duplication theory until then. Lesson: e2e preflight should fail fast if `/` isn't the app.
