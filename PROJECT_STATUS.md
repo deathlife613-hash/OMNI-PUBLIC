@@ -193,3 +193,8 @@ Server-side only; off unless `OMNI_TTS_PROVIDER=elevenlabs` + `OMNI_TTS_API_KEY`
 - Errors mapped to clear kinds (auth / payment (402, cause deliberately not assumed) / rate_limit / bad_request / timeout / unreachable / provider_error (5xx) / bad_audio / too_long / monthly_cap); no automatic retries; concurrent identical requests share one call; provider response bodies and the key are never echoed.
 - Tests: `tests/test_tts.py` (mocked provider via httpx.MockTransport). Not run here (no pytest in my sandbox); the live test waits for Sebastian's key. Unverified: free-plan API access, default model id `eleven_flash_v2_5`, voice ids, the exact error codes ElevenLabs returns (mapping follows common HTTP semantics).
 - NOT built: frontend "Voice engine" switch / audio playback (also needs `media-src blob:` in the CSP). Next commit if approved.
+
+### Ollama LOCAL adapter - LIVE-VERIFIED (Colab, Mitch, fresh clone)
+- Ollama 0.40.7, model `qwen2.5:0.5b` (398 MB). Direct OpenAI-compatible endpoints: `/v1/models` lists the model; `/v1/chat/completions` returned a real completion.
+- Through OMNI (`OMNI_AI_PROVIDER=ollama`, `OMNI_AI_BASE_URL=http://localhost:11434/v1`, `OMNI_AI_MODEL=qwen2.5:0.5b`, keyless): health 200; `POST /api/provider/test` -> ok, 1 model, 97 ms; `/api/provider/models` lists it; chat streamed deltas + done event with a real reply.
+- Still UNVERIFIED: Ollama Cloud (needs a key), Hugging Face adapter (needs Sebastian's account; free accounts have no included credits, so expect 402 / not $0), ElevenLabs TTS (mock-tested only; pending Colab run of 1cac5ef and a real key).
