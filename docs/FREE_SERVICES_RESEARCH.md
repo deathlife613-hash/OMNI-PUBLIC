@@ -117,3 +117,12 @@ Self-hosted Docker, port 5678, data (SQLite + encryption key) in `/home/node/.n8
 
 ### Cloudflare as front door
 Not needed yet. Free plan terms for Zero Trust Access (user count, whether a domain is required) were **not stated** on the page I read (cloudflare.com/plans/zero-trust-services); the general free plan page (cloudflare.com/plans/free) was not fetched. Revisit only if Sebastian owns a domain and wants a login gate or rate limiting in front of an open-access instance.
+
+## TeraBox (cloud storage) - EVALUATED, NOT ADOPTED (2026-10-21)
+Source: Mitch's evaluation for Sebastian. Not independently verified by me; terms readings are third-party.
+- Free: ~1 TB, no card for the free plan itself.
+- **No official developer API.** Programmatic access relies on unofficial reverse-engineered libraries that log in with the account email/password or session cookies. They break when TeraBox changes internals, and they would put a full account credential inside OMNI.
+- Free caps: ~500 files, ~4 GB per file (mobile), heavily throttled downloads, ads, 10-day recycle bin.
+- Third-party readings of its terms cite deletion after ~180 days of account inactivity. Not zero-knowledge.
+- **Decision:** no TeraBox integration or sync provider will be built. Only possible use: Sebastian manually parks large exported backups/media in the app as a cold archive (human-driven, never the only copy).
+- Backup vault stays the private Hugging Face dataset (official API, scoped token).
