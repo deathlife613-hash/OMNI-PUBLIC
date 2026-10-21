@@ -20,7 +20,7 @@ Facts below were fetched 2026-10-20 (some via a summarizer or secondary articles
 **OMNI -> n8n (outbound): a `webhook_post` tool.**
 - Named targets only: `OMNI_N8N_WEBHOOKS` (name -> URL). The URL carries the secret path, so it is env-only and never returned by any API or shown in the UI; the model/UI only ever sees the name.
 - Optional header auth to match n8n's Webhook node "Header auth" (`OMNI_N8N_AUTH_HEADER`, `OMNI_N8N_AUTH_VALUE`); n8n also supports Basic and JWT auth and an IP allowlist (official docs).
-- `needs_confirmation = true` on every call (external, consequential). JSON payload, 20 KB cap on OMNI's side (n8n's default max is 16 MB). Timeout configurable, one bounded retry (a sleeping n8n host can take ~1 min to wake). Response is truncated and labelled untrusted. Audit log records target name and outcome, not the payload.
+- `needs_confirmation = true` on every call (external, consequential). JSON payload, 20 KB cap on OMNI's side (n8n's default max is 16 MB). Timeout configurable (`OMNI_N8N_TIMEOUT_S`, default 20 s). **No automatic retry** (revised by the owner's rule: a retry can repeat the workflow's side effects; one invocation = one POST. A sleeping host may need the user to simply run it again). Response is truncated and labelled untrusted. Audit log records target name and outcome, not the payload.
 
 **n8n -> OMNI (inbound): workflows call OMNI's existing `/api/*`.**
 | Mode | How n8n authenticates | Caveat |
@@ -50,3 +50,8 @@ Cost to build the OMNI side: ~250 lines, 1-2 commits, ~10 mocked tests; the opti
 4. **n8n webhook tool** (+ optional automation token).
 5. **Hosting qualification** (Render, then n8n slot), deploy, real end-to-end test.
 6. **Human voice test** (browser steps, then ElevenLabs).
+
+
+### n8n outbound tool - BUILT (mocked-tested), see PROJECT_STATUS.md
+Env: `OMNI_N8N_WEBHOOKS` (JSON `{"name":"https://..."}`; http allowed only for localhost), optional `OMNI_N8N_AUTH_HEADER` + `OMNI_N8N_AUTH_VALUE`, `OMNI_N8N_TIMEOUT_S`, `OMNI_N8N_MAX_PAYLOAD_BYTES` (20000), `OMNI_N8N_RESPONSE_MAX_CHARS` (2000). Tool `webhook_post {target, payload}`, `needs_confirmation`. Sends only the explicit payload (no conversation/memory context), does not follow redirects, never returns or logs URLs/auth value; status shows target NAMES, counts and booleans only. Failure classes: unreachable, timeout ("may or may not have run"), 401/403, 404, other non-2xx, redirect, oversize payload. Response is truncated and labelled untrusted. Deviation from the earlier plan: the audit log records tool name + outcome only (not the target name), because the table has no target column.
+**Inbound caveat (honest):** n8n calls OMNI's normal `/api/*`. With a token set it authenticates with `Authorization: Bearer <OMNI token>` (full-access owner token; no narrower automation token exists yet). Under open-access deployments (`OMNI_ALLOW_OPEN_ACCESS=true`) anyone with OMNI's URL can make the same calls - no second auth scheme was invented. Prefer token mode if n8n is used at all.
