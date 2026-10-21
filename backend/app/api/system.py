@@ -28,6 +28,8 @@ def _memory_mb() -> dict | None:
 
 
 def _disk(settings: Settings) -> dict | None:
+    if db.is_postgres(settings.db_path):
+        return None  # the database lives on the provider's servers; local disk numbers would be misleading
     try:
         target = settings.db_path.parent
         target.mkdir(parents=True, exist_ok=True)
@@ -50,7 +52,7 @@ def status(request: Request, settings: Settings = Depends(get_settings)) -> dict
         "version": APP_VERSION,
         "environment": settings.env,
         "uptime_seconds": int(time.monotonic() - _STARTED),
-        "database": {"ok": db.ping(settings.db_path), "engine": "sqlite"},
+        "database": {"ok": db.ping(settings.db_path), "engine": db.engine_name(settings.db_path)},
         "storage": _disk(settings),
         "memory": _memory_mb(),
         "ai": {

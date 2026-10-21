@@ -3,3 +3,5 @@ uvicorn[standard]>=0.30,<1
 pydantic>=2.7,<3
 pydantic-settings>=2.3,<3
 httpx>=0.27,<1
+psycopg[binary]>=3.2,<4  # Postgres mode only (OMNI_DATABASE_URL); SQLite mode never imports it
+psycopg_pool>=3.2,<4

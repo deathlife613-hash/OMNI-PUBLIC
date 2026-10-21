@@ -153,3 +153,9 @@ Needs from owner: Render account (check for a card prompt), private HF dataset +
 ## Split architecture + plan ordering (2026-10-20 night)
 Direction from the owner: brain Groq, compute Render free, memory Neon Postgres, vault HF private dataset, code GitHub, voice ElevenLabs (browser voice fallback), automation n8n, Cloudflare only if it earns its place. Docs: DEPLOYMENT.md (split map), FREE_SERVICES_RESEARCH.md, POSTGRES_PLAN.md, INTEGRATIONS_PLAN.md. **Built: Groq/Ollama/HF adapters, HF sync. NOT built: Neon/Postgres, ElevenLabs TTS, n8n webhook tool.**
 Order: (1) Colab verification of the latest commit; (2) Postgres Option A (awaiting go); (3) ElevenLabs; (4) n8n webhook tool; (5) hosting qualification + deploy + end-to-end test; (6) human voice test.
+
+## Postgres build (Option A) - WRITTEN, NOT VERIFIED
+Rules from the owner: `OMNI_DATABASE_URL` flag, SQLite stays default and unchanged; stepwise commits; suite must stay green in SQLite mode; migration = JSON export/restore; every Postgres step below is written-not-verified until Colab runs land (SQLite suite -> local Postgres in Colab -> real Neon).
+- Step 1 (db layer) - written, not verified: `PgTarget` stands in for the db path (all ~100 call sites unchanged), pooled psycopg connections (min_size 0, max_idle 240 s, health check, `prepare_threshold=None` for poolers), `translate()` for the few SQLite spellings used (`?`, strftime-now, INSERT OR IGNORE, LIKE->ILIKE, rowid->ctid, lastrowid->RETURNING id), Postgres DDL generated from the SQLite DDL, advisory lock around migrations. Verified only by pure-function tests + a static scan of every SQL string (113 statements) - tests/test_postgres_layer.py (written, not yet run).
+- HF snapshot sync is disabled in Postgres mode (it dumps SQLite).
+- Known compromise: `rowid` tie-break ordering of conversations becomes `ctid` in Postgres (physical order; only matters when `updated_at` ties).

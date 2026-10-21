@@ -22,6 +22,8 @@ from pathlib import Path
 
 import httpx
 
+from app.core import db
+
 log = logging.getLogger("omni.sync")
 HF = "https://huggingface.co"
 SNAPSHOT_NAME = "omni.sql.gz"
@@ -198,6 +200,8 @@ class SyncManager:
 def build_sync(settings, transport=None) -> SyncManager | None:
     if not settings.sync_provider:
         return None
+    if db.is_postgres(settings.db_path):
+        return SyncManager(None, settings.db_path, settings.sync_interval_s, "not_supported: HF snapshot sync is for SQLite mode; with Postgres use JSON export for backups")
     if settings.sync_provider != "hf_dataset":
         return SyncManager(None, settings.db_path, settings.sync_interval_s, f"unsupported sync provider '{settings.sync_provider}'")
     if not settings.sync_hf_repo or not settings.sync_hf_token:

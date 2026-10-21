@@ -3,8 +3,10 @@ returned by any API route (see api/system.py, which exposes booleans only)."""
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from app.core.db import PgTarget
 
 APP_VERSION = "1.0.0-rc1"
 BACKEND_DIR = Path(__file__).resolve().parents[2]
@@ -20,6 +22,9 @@ class Settings(BaseSettings):
 
     env: str = "development"  # "development" | "production"
     db_path: Path = BACKEND_DIR / "data" / "omni.db"
+    # Postgres (e.g. Neon). Empty = SQLite at db_path. Server-side secret: it contains the password.
+    database_url: str = Field(default="", repr=False)
+    database_schema: str = ""  # optional Postgres schema (the test suite uses one per test)
     # Single-owner access token. Required in production.
     access_token: str = Field(default="", repr=False)
     # Production without a token fails closed. Set true ONLY if you accept that anyone with the URL can use
@@ -65,6 +70,12 @@ class Settings(BaseSettings):
     # Folder OMNI may search/read (read-only, .txt/.md/.csv). Empty = document tools disabled.
     docs_dir: Path | None = None
     tool_timeout_s: float = 5
+
+    @model_validator(mode="after")
+    def _use_postgres_when_configured(self):
+        if self.database_url:
+            self.db_path = PgTarget(self.database_url, self.database_schema)
+        return self
 
     @property
     def cors_origin_list(self) -> list[str]:
