@@ -1,5 +1,6 @@
 """E2E test server: the REAL app + built frontend, with a scripted fake model/search (no keys, no network)."""
 import json
+import os
 import tempfile
 from pathlib import Path
 
@@ -47,8 +48,15 @@ class E2EProvider(Provider):
         yield StreamEvent(delta=text)
 
 
+# A real OMNI_* variable exported in the shell (e.g. OMNI_DATABASE_URL from a Postgres test) must never leak in:
+# that would make the e2e DB persist across runs and collide with old data.
+for _k in [k for k in os.environ if k.startswith("OMNI_")]:
+    del os.environ[_k]
+
 settings = Settings(
-    _env_file=None, env="development", db_path=TMP / "e2e.db", ai_model="m1", workspace_dir=WS,
+    _env_file=None, env="development", db_path=TMP / "e2e.db", database_url="", ai_model="m1", workspace_dir=WS,
     frontend_dist=Path(__file__).resolve().parents[2] / "frontend" / "dist",
 )
 app = create_app(settings, provider_override=E2EProvider(), search_override=FakeSearch())
+
+print(f"[e2e] fresh SQLite database at {TMP / 'e2e.db'} (new on every server start)", flush=True)

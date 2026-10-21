@@ -34,3 +34,10 @@ Today: SQLite on the host's disk, plus HF-Dataset snapshot sync for hosts with a
 
 ## Decision needed
 Go/no-go on Option A. If go, I start with the db layer behind the flag (SQLite behaviour unchanged, existing 177+ tests as the safety net), then DDL, then call sites, then dual-backend tests.
+
+
+## Known dialect divergences (documented, tested)
+- **`INSERT OR IGNORE`**: SQLite suppresses unique, NOT NULL and CHECK violations. The Postgres translation (`ON CONFLICT DO NOTHING`) suppresses unique conflicts only; NOT NULL / CHECK violations raise. Covered by `test_sqlite_or_ignore_also_swallows_not_null_and_check_violations` (SQLite) and `test_on_conflict_do_nothing_does_not_hide_not_null_or_check_errors_and_pool_recovers` (live Postgres).
+- **`rowid` -> `ctid`**: tie-break ordering only; not a stable key.
+- **Translator** is literal/comment-aware and case-insensitive (`?`, `%`, LIKE, rowid, `insert into` inside strings or comments are left alone). Tests: `tests/test_postgres_layer.py`, `tests/test_postgres_live.py`, `tests/test_edge_cases.py`.
+- **Restore** with explicit high IDs calls `resync_sequences` so new inserts continue after them (`test_edge_cases.py`).

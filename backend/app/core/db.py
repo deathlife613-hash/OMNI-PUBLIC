@@ -274,36 +274,66 @@ def pg_migrations() -> list[tuple[int, str]]:
     return out
 
 
+# Literals, quoted identifiers and comments are never rewritten: a '?', the word LIKE or a % inside them is data.
+_PROTECTED = re.compile(r"""'(?:[^']|'')*'|"(?:[^"]|"")*"|--[^\n]*|/\*.*?\*/""", re.S)
+_STRFTIME_NOW = "'%Y-%m-%dT%H:%M:%fZ'"
+
+
+def _rewrite_keywords(sql: str) -> tuple[str, bool]:
+    """Pass 1: SQLite spellings -> Postgres, on code only. Returns (sql, had_insert_or_ignore)."""
+    protected: list[str] = []
+
+    def mask(m):
+        protected.append(m.group(0))
+        return f"\x00{len(protected) - 1}\x00"
+
+    s = _PROTECTED.sub(mask, sql)
+
+    def now(m):  # strftime('%Y-%m-%dT%H:%M:%fZ','now') -> ISO-8601 UTC text, same shape SQLite writes
+        if protected[int(m.group(1))] == _STRFTIME_NOW and protected[int(m.group(2))].lower() == "'now'":
+            return _NOW_PG
+        return m.group(0)
+
+    s = re.sub(r"strftime\(\s*\x00(\d+)\x00\s*,\s*\x00(\d+)\x00\s*\)", now, s, flags=re.I)
+    ignore = bool(re.search(r"\bINSERT\s+OR\s+IGNORE\s+INTO\b", s, re.I))
+    s = re.sub(r"\bINSERT\s+OR\s+IGNORE\s+INTO\b", "INSERT INTO", s, flags=re.I)
+    s = re.sub(r"\bLIKE\b", "ILIKE", s, flags=re.I)
+    s = re.sub(r"\browid\b", "ctid", s, flags=re.I)
+    return re.sub(r"\x00(\d+)\x00", lambda m: protected[int(m.group(1))], s), ignore
+
+
+def _bind_params(sql: str) -> str:
+    """Pass 2: `?` -> `%s` in code only; every literal `%` (anywhere, comments included) -> `%%`.
+    psycopg scans the whole statement for % placeholders without regard to quotes or comments."""
+    out, pos = [], 0
+    for m in _PROTECTED.finditer(sql):
+        out.append(sql[pos : m.start()].replace("%", "%%").replace("?", "%s"))
+        out.append(m.group(0).replace("%", "%%"))
+        pos = m.end()
+    out.append(sql[pos:].replace("%", "%%").replace("?", "%s"))
+    return "".join(out)
+
+
 def translate(sql: str, has_params: bool) -> tuple[str, bool]:
     """SQLite -> Postgres for the statements OMNI issues. Returns (sql, wants_returning_id).
 
     Handles: `?` placeholders, the strftime('now') timestamp, INSERT OR IGNORE, case-insensitive LIKE,
     `rowid` (only used as an ordering tie-break; mapped to ctid), and `lastrowid` (via RETURNING id).
+    Matching is case-insensitive and never touches string literals, quoted identifiers or comments.
     Anything else is passed through unchanged, so an untranslatable statement fails loudly in Postgres tests.
+
+    Known difference: SQLite's `OR IGNORE` also swallows NOT NULL / CHECK violations; Postgres'
+    `ON CONFLICT DO NOTHING` only covers unique conflicts (the one call site inserts a validated, non-null name).
     """
-    s = sql.replace(_NOW_SQLITE, _NOW_PG)
-    ignore = bool(re.search(r"\bINSERT OR IGNORE INTO\b", s))
-    if ignore:
-        s = re.sub(r"\bINSERT OR IGNORE INTO\b", "INSERT INTO", s)
-    s = re.sub(r"\bLIKE\b", "ILIKE", s)
-    s = re.sub(r"\browid\b", "ctid", s)
+    s, ignore = _rewrite_keywords(sql)
     if has_params:
-        out, in_quote = [], False
-        for ch in s:
-            if ch == "'":
-                in_quote = not in_quote
-            if ch == "%":
-                out.append("%%")
-            elif ch == "?" and not in_quote:
-                out.append("%s")
-            else:
-                out.append(ch)
-        s = "".join(out)
+        s = _bind_params(s)
     s = s.rstrip().rstrip(";")
     if ignore:
         s += " ON CONFLICT DO NOTHING"
-    m = re.match(r"\s*INSERT INTO (\w+)", s)
-    returning = bool(m and m.group(1) in AUTOINC_TABLES and "RETURNING" not in s.upper())
+    code_only = _PROTECTED.sub(" ", s)
+    m = re.match(r"\s*INSERT\s+INTO\s+(\w+)", code_only, re.I)
+    returning = bool(m and m.group(1).lower() in AUTOINC_TABLES and not re.search(r"\bRETURNING\b", code_only, re.I))
     if returning:
         s += " RETURNING id"
     return s, returning

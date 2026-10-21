@@ -81,3 +81,42 @@ def test_hf_snapshot_sync_is_disabled_in_postgres_mode_with_a_clear_reason():
                  sync_hf_repo="me/x", sync_hf_token="t")
     m = build_sync(s)
     assert m.enabled is False and "not_supported" in m.last_error
+
+
+# ---- translator traps (review P0 list): these only show up with unusual SQL, which a scan of today's statements misses ----
+def test_lowercase_and_mixed_case_sql_is_recognised():
+    sql, ret = db.translate("insert into memories(kind, content) values (?, ?)", True)
+    assert ret and sql == "insert into memories(kind, content) values (%s, %s) RETURNING id"
+    assert db.translate("Insert Into Notes(title, body) Values (?, ?)", True)[1] is True
+    assert tr("insert or ignore into skills(name) values (?)") == "INSERT INTO skills(name) values (%s) ON CONFLICT DO NOTHING"
+    assert tr("select * from n where title like ?") == "select * from n where title ILIKE %s"
+    assert tr("select * from c order by updated_at desc, RowId desc", False).endswith("ctid desc")
+
+
+def test_question_mark_inside_literal_comment_or_quoted_identifier_is_not_a_placeholder():
+    assert tr("SELECT '?' AS q, ?") == "SELECT '?' AS q, %s"
+    assert tr("SELECT 'it''s?' AS q, ?") == "SELECT 'it''s?' AS q, %s"  # escaped apostrophe does not end the literal early
+    assert tr("SELECT 1 -- really?\n WHERE a = ?") == "SELECT 1 -- really?\n WHERE a = %s"
+    assert tr("SELECT 1 /* why? */ WHERE a = ?") == "SELECT 1 /* why? */ WHERE a = %s"
+    assert tr('SELECT "odd?col" FROM t WHERE a = ?') == 'SELECT "odd?col" FROM t WHERE a = %s'
+    assert tr("SELECT ?, '?', ?").count("%s") == 2  # exactly as many placeholders as real parameters
+
+
+def test_keywords_inside_literals_and_comments_are_data_not_syntax():
+    assert tr("SELECT 'I LIKE rowid' AS s, ?") == "SELECT 'I LIKE rowid' AS s, %s"
+    assert tr("SELECT 1 /* LIKE rowid */ WHERE a = ?") == "SELECT 1 /* LIKE rowid */ WHERE a = %s"
+    assert tr('SELECT "like" FROM t', False) == 'SELECT "like" FROM t'
+    lit = "SELECT 'strftime(''%Y-%m-%dT%H:%M:%fZ'',''now'')' AS lit"
+    assert tr(lit, False) == lit  # the timestamp rewrite also leaves literals alone
+    assert db.translate("INSERT INTO notes(title, body) VALUES ('RETURNING', ?)", True)[0].endswith("RETURNING id")  # word in a literal != clause
+
+
+def test_percent_signs_are_escaped_everywhere_when_parameterised_but_not_otherwise():
+    assert tr("SELECT 1 WHERE a LIKE '%x%' AND b = ?") == "SELECT 1 WHERE a ILIKE '%%x%%' AND b = %s"
+    assert tr("SELECT 1 -- 100% sure\n WHERE b = ?") == "SELECT 1 -- 100%% sure\n WHERE b = %s"
+    assert tr("SELECT '100%' AS p", False) == "SELECT '100%' AS p"  # psycopg does no % processing without parameters
+
+
+def test_translation_is_idempotent_enough_to_not_double_escape_literals():
+    once = tr("SELECT '50%' WHERE a = ?")
+    assert once == "SELECT '50%%' WHERE a = %s" and once.count("%%") == 1

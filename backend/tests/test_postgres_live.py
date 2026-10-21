@@ -82,3 +82,47 @@ def test_unreachable_database_reports_not_ok_instead_of_crashing():
 
     assert db.ping(db.PgTarget("postgresql://nobody:x@127.0.0.1:1/none?connect_timeout=2")) is False
     db.close_pools()
+
+
+def test_lowercase_insert_still_returns_its_id(target):
+    from app.core import db
+
+    db.init_db(target)
+    with db.session(target) as conn:
+        cur = conn.execute("insert into memories(kind, content) values (?, ?)", ("fact", "lowercase"))
+        assert isinstance(cur.lastrowid, int)
+
+
+def test_on_conflict_do_nothing_does_not_hide_not_null_or_check_errors_and_pool_recovers(target):
+    """The dialect difference from SQLite's OR IGNORE: only unique conflicts are suppressed."""
+    import psycopg
+
+    from app.core import db
+
+    db.init_db(target)
+    with db.session(target) as conn:
+        first = conn.execute("INSERT OR IGNORE INTO skill_versions(name, version, manifest, validation, created_by) VALUES ('a','1','{}','{}','x')")
+        assert first.lastrowid is not None and first.rowcount == 1
+        dup = conn.execute("INSERT OR IGNORE INTO skill_versions(name, version, manifest, validation, created_by) VALUES ('a','1','{}','{}','x')")
+        assert dup.lastrowid is None and dup.rowcount == 0  # ignored: nothing returned, no error
+        assert conn.execute("SELECT COUNT(*) AS n FROM skill_versions").fetchone()["n"] == 1  # transaction not aborted
+    with pytest.raises(psycopg.errors.NotNullViolation):
+        with db.session(target) as conn:
+            conn.execute("INSERT OR IGNORE INTO skill_versions(name, version, manifest, validation, created_by) VALUES ('a','2',NULL,'{}','x')")
+    with pytest.raises(psycopg.errors.CheckViolation):
+        with db.session(target) as conn:
+            conn.execute("INSERT OR IGNORE INTO skill_versions(name, version, manifest, validation, created_by, status) VALUES ('a','3','{}','{}','x','bogus')")
+    with db.session(target) as conn:  # both failures rolled back cleanly; the pool hands out a healthy connection
+        assert conn.execute("SELECT COUNT(*) AS n FROM skill_versions").fetchone()["n"] == 1
+
+
+def test_literals_with_keywords_and_question_marks_round_trip_unchanged(target):
+    from app.core import db
+
+    db.init_db(target)
+    text = "I LIKE rowid? 100% -- not a comment 'quoted' \\"
+    with db.session(target) as conn:
+        conn.execute("INSERT INTO notes(title, body) VALUES (?, ?)", ("t", text))  # data containing ? % and keywords
+        conn.execute("INSERT INTO notes(title, body) VALUES ('it''s? LIKE 50%', ?)", ("x",))  # literal inside the SQL itself
+        rows = {r["title"]: r["body"] for r in conn.execute("SELECT title, body FROM notes /* why? */ WHERE id > ?", (0,)).fetchall()}
+    assert rows["t"] == text and rows["it's? LIKE 50%"] == "x"
