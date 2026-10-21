@@ -14,7 +14,7 @@ Chromium). **NOT TESTED** = never executed. **NOT IMPLEMENTED** = not built. Not
 ### AI
 | Criterion | Result |
 |---|---|
-| A configured free hosted model answers a message | **NOT TESTED** (needs your Groq key; adapter tested against mocked HTTP only) |
+| A configured free hosted model answers a message | PASS — reported from a Colab run 2026-10-20 (Groq; test ok, 11 models, 421 ms; streamed replies from allam-2-7b and openai/gpt-oss-120b). Not re-run by me in this session |
 | Model request made by backend, not frontend | PASS (architecture + tests; frontend never receives keys) |
 | Secrets never in bundles/logs | PASS for status/provider APIs and error messages (tests); bundle not grepped for keys — NOT TESTED |
 | Unavailable model / exhausted quota → useful error | PASS (mocked 429/402/5xx/timeout) |

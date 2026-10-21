@@ -46,7 +46,7 @@ Repo structure · env config (`core/config.py`) · SQLite + versioned migrations
 |---|---|
 | Backend tests (33: 11 Phase 1 + 10 adapter + 12 chat), Python 3.13 on Colab | PASS |
 | Frontend `tsc --noEmit` + `vite build` on Colab | PASS |
-| Live call to a real hosted model (needs a Groq key) | NOT TESTED |
+| Live call to a real hosted model (Groq) | VERIFIED 2026-10-20 (reported from Colab run; see Live test below) |
 | Streaming in a real browser against a running backend | NOT TESTED |
 | Docker build | NOT TESTED |
 | Ollama / Hugging Face adapters | NOT IMPLEMENTED |
@@ -109,7 +109,7 @@ Dashboard: quick actions, AI/connection, measured usage (since restart; tokens o
 
 ## End-to-end UI test (2026-10-20, Google Colab)
 Real `uvicorn` server + built frontend + headless Chromium (Playwright), scripted fake model/search (no keys, no network): **16/16 PASS** — dashboard connected/usage, chat send + streamed reply + sidebar, web-search source link, test connection, memory add + secret refusal, tools calculator/task/delete-with-confirmation, theme switch, security/audit, backup download, mobile width (no overflow), no uncaught page errors. Run: `backend/e2e/ui_test.py` against `backend/e2e/server.py`.
-Still NOT TESTED: a real hosted model, real microphone/speech, Docker, real deployment.
+Still NOT TESTED: real microphone/speech, Docker, real deployment.
 
 ## Phase 9 — Agents & coding workspace (2026-10-20)
 Sequential manager→role steps on ONE model with checkpoints in SQLite; limits (steps, model calls, seconds/run, one task at a time); quota/outage pauses without losing state and resumes without re-planning; cancel; SSE progress. Roles enabled: manager, research (uses search if configured), planning, coding, review, documentation, data. NOT enabled: testing, devops, skill-creator-as-task, memory (they would need command execution/sandboxing). Coding workspace: read-only viewer; Coding Agent can only create pending diffs; a human approves → file written (stale-file check) → revert possible (refuses to clobber newer edits). Paths confined to `OMNI_WORKSPACE_DIR`; blocks traversal, symlinks, secret-named files, `.git`, non-text types; secrets in proposals rejected. **No command execution exists; "run tests" is not implemented.** No Git branches (not relied on). Parallel agents NOT implemented (sequential by design).
@@ -126,3 +126,10 @@ Declarative skills only (prompt template + input schema + declared permissions +
 ## Phase 11 — Hardening (2026-10-20)
 **Verified on Colab: backend 153 passed; frontend tsc OK, build OK, 7 vitest passed; real-browser e2e 19/19 PASS (incl. Agents + Skills UI, under CSP).**
 Added: security headers + CSP on pages, `no-store` on API, OMNI's own model-request limiter (`OMNI_MODEL_RPM_LIMIT`, default 20/min; covers chat, agent runs, skill draft/review/run; unauthenticated requests don't consume it). Release checklist: `docs/RELEASE_CHECKLIST.md`. E2E extended to Agents + Skills flows.
+
+## Live model test (2026-10-20, reported from Colab)
+Groq key via Colab Secrets (never in chat/repo). `/api/health` 200; `/api/provider/test` ok, 11 models, 421 ms. Streamed replies saved with `done` event: `allam-2-7b` (fallback pick) and `openai/gpt-oss-120b` (selected via PUT /api/provider/model).
+Groq catalog for this account now: allam-2-7b, canopylabs/orpheus-*, meta-llama/llama-prompt-guard-2-*, openai/gpt-oss-120b, openai/gpt-oss-20b, openai/gpt-oss-safeguard-20b, qwen/qwen3.8-27b, whisper-large-v3(-turbo). `llama-3.3-70b` is gone; catalog changes often — never hardcode.
+Recommended default: `openai/gpt-oss-120b`. Many listed models are not chat models (whisper, orpheus TTS, prompt-guard, safeguard): the model picker should hide/flag them (TODO).
+Known gap: Colab e2e needs `pip install playwright && playwright install chromium` on a fresh runtime (add to notebook steps).
+Next: plan-JSON reliability test of agents with gpt-oss-120b; filter non-chat models; deployment (Oracle/other); xAI key revocation is the user's.
