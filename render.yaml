@@ -1,4 +1,9 @@
 # Free web service on Render (Docker). STATICALLY REVIEWED ONLY - never deployed.
+# DISQUALIFIED 2026-10-21 as the $0 host: clicking "Deploy web service" on the Free plan
+# opened an "Add Card" dialog demanding a card plus a temporary $1 authorization.
+# The deploy was stopped per the no-card rule: nothing was charged, no service was created.
+# Do NOT use this file as the recommended $0 route. The permanent host is undecided
+# (Back4App vs SnapDeploy, pending the owner's pick). This file is kept for reference only.
 # Honest limits (Render docs, checked 2026-10-20): spins down after 15 min idle (~1 min cold start),
 # 750 free instance hours/month, EPHEMERAL disk (SQLite is wiped on every restart/spin-down/redeploy).
 # OMNI survives that by syncing its database to a PRIVATE Hugging Face Dataset (OMNI_SYNC_*), see docs/DEPLOYMENT.md.
