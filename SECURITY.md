@@ -12,7 +12,7 @@
 - Token lives in `sessionStorage` in the browser (cleared when the tab closes). It is your login, not a provider key.
 - No HTTPS in the app itself — terminate TLS at the host (Render/Cloudflare/Caddy). Never expose OMNI over plain HTTP.
 - No password hashing/user accounts yet (single token only).
-- No audit log, approval queue, or sandbox yet (Phases 5, 9, 10).
+- Audit log and approval queue are built (Phases 5, 9, 10). There is no sandbox: code-executing skills are not built.
 
 ## Operating rules
 1. Never commit `.env`. Rotate `OMNI_ACCESS_TOKEN` and provider keys if exposed.
@@ -26,4 +26,4 @@
 - Tool runs are validated, time-limited and audit-logged (tool + outcome only). Delete requires explicit confirmation.
 - Document tools read only inside `OMNI_DOCS_DIR`, only .txt/.md/.csv, never symlinks or secret-named files.
 - Backups never contain keys or tokens. Restore is all-or-nothing and needs explicit confirmation.
-- No shell/command execution, agents, coding workspace or self-created skills exist yet (Phases 9–10).
+- Agents, coding workspace (approval-gated diffs) and declarative skills exist (Phases 9–10). No shell/command execution exists; no code-executing skills (no sandbox).
