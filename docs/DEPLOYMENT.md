@@ -1,6 +1,6 @@
 # Deploying OMNI
 
-Last reviewed: 2026-10-20. **Nothing here has been deployed or Docker-built by the authoring assistant — see "Verified vs not" at the end.**
+Last reviewed: 2026-11-12. **Nothing here has been deployed or Docker-built — see "Verified vs not" at the end. Render was DISQUALIFIED 2026-10-21 (see below).**
 
 ## The one thing to understand first
 OMNI keeps your data in a SQLite file. It is only durable if that file sits on a **persistent disk**. On a host with an
@@ -13,12 +13,12 @@ No single-server home: each job runs on its own free service and they connect th
 | Piece | Service | What lives there | Connected by | Status |
 |---|---|---|---|---|
 | Brain (model) | **Groq** (alt: Ollama Cloud, OpenRouter `:free`; HF is not free) | Inference only; no OMNI data stored | `OMNI_AI_PROVIDER`, `OMNI_AI_API_KEY` on the compute host | Live-tested from Colab 2026-10-20 |
-| Compute | **Render free web service** (Docker) | The FastAPI backend + built frontend; ephemeral disk, sleeps after 15 min | `render.yaml`; all secrets as Render env vars | Config written, never deployed; card requirement unverified |
-| Memory | **Neon free Postgres** (adapter written, unverified) | Conversations, memories, notes, tasks, agent/skill records | `OMNI_DATABASE_URL` (server env only) | **Written, NOT VERIFIED** - Option A layer is in the code behind `OMNI_DATABASE_URL` (SQLite stays the default); no live Postgres run has passed yet. Treat as unproven until the Colab `TEST_PG_URL` suite and a restart smoke test pass. See `docs/POSTGRES_PLAN.md` |
+| Compute | **Render free web service** (Docker) | The FastAPI backend + built frontend; ephemeral disk, sleeps after 15 min | `render.yaml`; all secrets as Render env vars | DISQUALIFIED 2026-10-21 — Free-plan deploy demanded a card + temporary $1 authorization; stopped, nothing charged, no service created |
+| Memory | **Neon free Postgres** (adapter built) | Conversations, memories, notes, tasks, agent/skill records | `OMNI_DATABASE_URL` (server env only) | **VERIFIED on local PostgreSQL 16 in Colab, 2026-10-21** (SQLite 192 passed, Postgres 186 passed, export/restore round-trip passed). Real Neon run still pending. See `docs/POSTGRES_PLAN.md` |
 | Backup / vault | **Hugging Face private Dataset** | Gzipped snapshots of the SQLite DB (SQLite mode); later also JSON exports | `OMNI_SYNC_PROVIDER=hf_dataset`, `OMNI_SYNC_HF_REPO`, `OMNI_SYNC_HF_TOKEN` | Built, unit-tested with a fake HF; real HF untested |
 | Code + CI | **GitHub** | Source (`omni-public`), history | Render builds from the repo | Repo live; GitHub Actions unusable (account billing lock) - tests run in Colab |
-| Voice | **ElevenLabs** (planned) + browser voice fallback | Audio generated on demand; nothing stored by OMNI | `OMNI_TTS_*` env vars | **Not built** - `docs/INTEGRATIONS_PLAN.md` |
-| Automation | **n8n** (planned, self-hosted) | Workflows + its own DB | OMNI -> n8n via `OMNI_N8N_WEBHOOKS`; n8n -> OMNI via OMNI's API + token | **Not built; no host chosen** - contract in `docs/INTEGRATIONS_PLAN.md` |
+| Voice | **ElevenLabs** + browser voice fallback | Audio generated on demand; nothing stored by OMNI | `OMNI_TTS_*` env vars | **Built, mocked-verified** (live test pending a key) - `docs/INTEGRATIONS_PLAN.md` |
+| Automation | **n8n** (self-hosted) | Workflows + its own DB | OMNI -> n8n via `OMNI_N8N_WEBHOOKS`; n8n -> OMNI via OMNI's API + token | **Built, mocked-verified** (live round-trip pending a host) - contract in `docs/INTEGRATIONS_PLAN.md` |
 | Front door | **Cloudflare** (optional) | Would proxy/hide the Render URL, add rate limiting or a login gate | DNS / tunnel | **Does not earn its place yet:** Render already serves HTTPS; Cloudflare's proxy needs a domain you own, and I could not verify its free Access (login gate) terms - the pricing page I read did not state them |
 
 Data flow: browser -> Render (OMNI) -> Groq (reply text) and -> Neon (data) and -> HF (backups) and, when enabled, -> ElevenLabs (reply text for speech) and <-> n8n (named webhooks). The browser never sees any key.
@@ -39,12 +39,14 @@ backend calls with a key you provide. Your browser only talks to OMNI; keys neve
 
 See `docs/FREE_SERVICES_RESEARCH.md` for sources and dates. Re-check every plan before relying on it; free tiers change.
 
-## No-card, always-reachable home: Render free + Hugging Face Dataset sync (recommended for $0)
+## No-card, always-reachable home: Render is DISQUALIFIED — host undecided (2026-10-21)
+
+Render free + HF-Dataset sync was the recommended $0 route until 2026-10-21, when deploying the free Render web service demanded a card plus a temporary $1 authorization. The deploy was stopped per the no-card rule; nothing was charged and no service was created. Do NOT recommend Render as the $0 route. The permanent host is undecided: Back4App vs SnapDeploy, pending the owner's pick.
 Checked 2026-10-20 from official docs unless marked. **Not deployed or tested yet.**
 
 | Route | Verdict |
 |---|---|
-| **Render free web service (Docker) + OMNI's HF-Dataset sync** | Candidate. Free, 750 h/month, spins down after 15 min idle (~1 min cold start), **ephemeral disk** (official). Card requirement is **not stated in Render's docs; community posts are inconclusive - unverified.** If Render asks for a card at signup, stop. Render also calls free services unsuitable for production. Whether the free plan accepts Docker services was not stated on the page I read; secondary sources say yes. |
+| **Render free web service (Docker) + OMNI's HF-Dataset sync** | Candidate. Free, 750 h/month, spins down after 15 min idle (~1 min cold start), **ephemeral disk** (official). Card requirement is **CONFIRMED: Render demanded a card + temporary $1 authorization on the Free plan on 2026-10-21. DISQUALIFIED.** Render also calls free services unsuitable for production. Whether the free plan accepts Docker services was not stated on the page I read; secondary sources say yes. |
 | Hugging Face **Docker Spaces** | **BLOCKED: HF docs say Docker (and Gradio) Spaces need a paid plan to create.** Free = static Spaces only. Free CPU Space disk is also ephemeral. |
 | HF Storage Buckets as a mounted volume | Free to create, but the free allowance wasn't stated and it is only usable from an HF Space (paid for Docker). Not used. |
 | Oracle Always Free | **Card required** (official). Stopped on this route. |

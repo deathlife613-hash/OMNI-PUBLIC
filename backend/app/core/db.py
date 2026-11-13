@@ -6,7 +6,7 @@ see docs/FREE_SERVICES_RESEARCH.md and README before deploying.
 
 Postgres mode (docs/POSTGRES_PLAN.md, Option A): every call site still passes `settings.db_path`; in Postgres
 mode that value is a `PgTarget`, and `connect()` returns a wrapper whose `execute()` translates the few SQLite
-spellings the code uses (see `translate`). WRITTEN BUT NOT YET VERIFIED against a real Postgres.
+spellings the code uses (see `translate`). VERIFIED against a real Postgres (local PostgreSQL 16, Colab, 2026-10-21 — see PROJECT_STATUS.md). A real Neon run is still pending.
 """
 from __future__ import annotations
 

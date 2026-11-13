@@ -1,6 +1,6 @@
 # OMNI — my assistant, my data, my configuration
 
-Personal JARVIS-style assistant: FastAPI backend, React frontend, SQLite storage, a free hosted model as the brain. **Status: Phases 1–11 built.** Chat with a free hosted model, memory & notes, voice, tools, optional web search, dashboard/settings, deployment files. Live Groq model calls VERIFIED 2026-10-20 and real-browser E2E 21/21 VERIFIED (see `PROJECT_STATUS.md` for the exact PASS / FAIL / NOT TESTED list). Docker is NOT RUN — the Docker pack has never been built or run. There is no `package-lock.json` / requirements lockfile yet, so a fresh install is not pinned to the install tested on 2026-10-21.
+Personal JARVIS-style assistant: FastAPI backend, React frontend, SQLite storage, a free hosted model as the brain. **Status: Phases 1–11 built.** Chat with a free hosted model, memory & notes, voice, tools, optional web search, dashboard/settings, deployment files. Live Groq model calls VERIFIED 2026-10-20 (history — Groq is a working adapter/fallback, but no longer the primary brain) and real-browser E2E 21/21 VERIFIED (see `PROJECT_STATUS.md` for the exact PASS / FAIL / NOT TESTED list). Docker is NOT RUN — the Docker pack has never been built or run. There is no `package-lock.json` / requirements lockfile in the repo yet (a `frontend/package-lock.json` was generated locally in the 2026-11-12 cloud build, not pushed), so a fresh install is not pinned to the install tested on 2026-10-21.
 
 **Hosting (2026-10-21 update):** Render is DISQUALIFIED as the $0 host — deploying a free Render web service demanded a card plus a temporary $1 authorization, so the deploy was stopped; nothing was charged and no service was created. The permanent host is undecided (Back4App vs SnapDeploy, pending the owner's pick). See `docs/DEPLOYMENT.md`.
 
@@ -40,7 +40,7 @@ npm run build
 Copy `.env.example` to `.env` (the dev script does this). Key settings: `OMNI_ACCESS_TOKEN`, `OMNI_AI_PROVIDER`, `OMNI_AI_API_KEY`. Keys stay on the backend.
 
 ## First chat
-1. Create a free Groq account/key (console.groq.com), put it in `.env` as `OMNI_AI_API_KEY` (never paste keys into chat or commit them).
+1. Brain (2026-11-12 correction): the live OMNI brain is Google AI (Gemini) via the Cloudflare relay — Grok (xAI) never worked and is scrapped, do not chase it. A free Groq key (console.groq.com) also works in `.env` as `OMNI_AI_API_KEY` as a fallback adapter (live call VERIFIED 2026-10-20). Never paste keys into chat or commit them.
 2. Restart the backend, open the app → **Chat** → *Test connection* → *Choose model*, then send a message.
 3. Optional: `OMNI_SEARCH_PROVIDER=tavily` + `OMNI_SEARCH_API_KEY` for web search; `OMNI_DOCS_DIR` for read-only document search.
 

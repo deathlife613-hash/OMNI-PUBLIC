@@ -24,7 +24,7 @@ Free tiers change often. **Re-verify the row for any service on its official pag
 
 | Service | Type | Free allowance | Sleep / persistence | Card? | Verdict for OMNI |
 |---|---|---|---|---|---|
-| **Render** free web service | App host (container) | 512 MB RAM, 0.1 CPU; 750 instance-hours/month per workspace [secondary; Render changelog confirms 15-min spin-down rule] | Spins down after 15 min idle, ~1 min cold start [official changelog + secondary]. **Ephemeral filesystem — SQLite data is lost on restart.** Free Postgres expires after 30 days (+14-day grace) [secondary; an older source said 90 — **[conflict]**, don't use it for data]. No free background workers. | Not required for free [unverified] | **Best realistic $0 app host**, paired with external DB. No 24/7, no continuous agents. |
+| **Render** free web service | App host (container) | 512 MB RAM, 0.1 CPU; 750 instance-hours/month per workspace [secondary; Render changelog confirms 15-min spin-down rule] | Spins down after 15 min idle, ~1 min cold start [official changelog + secondary]. **Ephemeral filesystem — SQLite data is lost on restart.** Free Postgres expires after 30 days (+14-day grace) [secondary; an older source said 90 — **[conflict]**, don't use it for data]. No free background workers. | Not required for free [unverified] | **DISQUALIFIED 2026-10-21:** Free-plan deploy demanded a card + temporary $1 authorization. Not a $0 host. |
 | **Oracle Cloud** Always Free | Full VM | Ampere A1 ARM; page showed 4 OCPU/24 GB, but a notice reports limits cut to **2 OCPU/12 GB, enforced from 2026-08-18** [secondary quoting Oracle — **[conflict]**]; 2 × tiny AMD micro VMs; 200 GB block storage [official page + secondary] | Persistent disk; idle instances can be reclaimed; "Out of capacity" errors common in popular regions [secondary] | **Yes** — credit/debit card for verification (no prepaid/virtual) [official] | Most capable (always-on, persistent, can host agents/workspace) but needs a card, capacity luck, and limits may have shrunk. **Best upgrade path.** |
 | **Koyeb** | App host | One free web service, ~0.1 vCPU, scale-to-zero after 1 h [secondary] | Sleeps; no free workers | **[conflict]**: one source says card + $29 pre-authorization required since Feb 2026; another says no card. Mistral AI acquired Koyeb Feb 2026. | Not recommended until card status is confirmed. |
 | **Cloudflare Workers / Pages** | Edge + static | Free: 100,000 req/day, 1,000 req/min burst, 10 ms CPU/invocation, 50 subrequests/request; static asset requests free and unlimited [official]. Python Workers now support ASGI incl. FastAPI [secondary] | No sleep; no continuous workers; D1 free daily row limits enforced since 2026-09-01 [secondary] | No | **Excellent for the static frontend.** Not for a long-running backend. |
@@ -34,7 +34,7 @@ Free tiers change often. **Re-verify the row for any service on its official pag
 
 | Service | Free allowance | Catch | Verdict |
 |---|---|---|---|
-| **Supabase** Free Postgres | 2 projects, 500 MB DB, 1 GB files, 5 GB egress, 50k MAU, unlimited API requests [secondary] | **Project pauses after 7 days of inactivity**; manual restore required [secondary]. Regular use keeps it awake. | Best fit for durable storage when the app host has an ephemeral disk. Needs a Postgres storage adapter (Phase 8). |
+| **Supabase** Free Postgres | 2 projects, 500 MB DB, 1 GB files, 5 GB egress, 50k MAU, unlimited API requests [secondary] | **Project pauses after 7 days of inactivity**; manual restore required [secondary]. Regular use keeps it awake. | Best fit for durable storage when the app host has an ephemeral disk. Needs a Postgres storage adapter (Phase 8). | Supabase was DROPPED for the OMNI memory role — replaced by Neon free Postgres. Supabase appears nowhere in code or config.
 | **SQLite** (file) | Free, built in | Only durable on a persistent disk (Oracle VM, local, Docker volume) | Default for local/dev and Oracle. |
 | Firebase Spark | **[not checked]** | — | Evaluate in Phase 8. |
 
@@ -42,7 +42,7 @@ Free tiers change often. **Re-verify the row for any service on its official pag
 
 **Phases 1–7: run on your own computer** (backend + browser). No hosting needed, no accounts, no cost.
 
-**Online (Phase 8), Plan A:** one Render free web service serving backend + built frontend, Supabase free Postgres for data, Groq as brain.
+**Online (Phase 8), Plan A (SUPERSEDED 2026-10-21):** was one Render free web service + Supabase free Postgres + Groq. Render is DISQUALIFIED (card wall) and Supabase was dropped for Neon free Postgres. The replacement Plan A is undecided: Back4App vs SnapDeploy for compute, Neon for memory, Google AI (Gemini) via the Cloudflare relay as brain — pending the owner's host pick.
 - *Compromises:* ~1 min cold start after 15 min idle; reminders/background jobs only run while awake; agent tasks must run inside a request or be resumed on wake; coding workspace stays local/read-only; Supabase needs periodic activity.
 
 **Plan B (upgrade path):** Oracle Always Free VM + Docker Compose + SQLite on its disk. Requires a card for verification (no charge unless you upgrade) and available capacity.
@@ -74,7 +74,7 @@ Sources fetched today are official docs unless marked; some pages were read thro
 | Other no-card container hosts (secondary: snapdeploy.dev 2026 comparison, **unverified**) | SnapDeploy (100 h/month, sleeps), Railway ($5 trial then $1/month credit, 0.5 GB volume - trial/credit, not permanent free), Back4App (stops after 60 min per deploy). Koyeb, Cloud Run, Azure Container Apps, AWS Lambda, Oracle: card required. | snapdeploy.dev blog |
 | Web search without signup | DuckDuckGo HTML endpoint (unofficial scrape; may block datacenter IPs) and Wikipedia's official MediaWiki API (free, no key, encyclopedia only). Public SearXNG instances were rejected as a default: they commonly disable JSON output and rate-limit. **Neither could be called from my sandbox (network allowlist): live behaviour NOT TESTED.** | en.wikipedia.org/w/api.php docs (not fetched); html.duckduckgo.com (blocked in sandbox) |
 
-Decision: recommended no-card route = Render free + HF private-Dataset sync. HF Docker Spaces and Oracle are ruled out by their payment walls.
+Decision (updated 2026-11-12): the Render free + HF private-Dataset sync route is DISQUALIFIED (Render card wall, 2026-10-21). HF Docker Spaces and Oracle remain ruled out by their payment walls. No replacement $0 compute host is chosen yet (Back4App vs SnapDeploy, pending the owner's pick).
 
 
 ## Chinese-hosted "free" servers - evaluated and REJECTED as OMNI's home (2026-10-20)

@@ -1,6 +1,6 @@
 # OMNI — Project Status
 
-**Last updated:** 2026-10-20 · **Current phase:** 1 (Foundation) — backend tests and frontend build verified on Google Colab
+**Last updated:** 2026-10-21 · **Current phase:** 11 (Hardening) — all 11 phases built; SQLite suite 243 passed, Postgres mode 237 passed at HEAD (see end-of-night state below)
 
 ## Verification (PASS / FAIL / NOT TESTED)
 | Check | Result |
@@ -214,3 +214,10 @@ Server-side only; off unless `OMNI_TTS_PROVIDER=elevenlabs` + `OMNI_TTS_API_KEY`
 VERIFIED: UI redesign (08aff84, E2E 21/21); Postgres layer on local PG16 incl. export/restore + restart survival; Ollama local (live); TTS adapter (mocked, 1cac5ef); n8n tool (mocked, 75332cf); both DB modes green at HEAD (SQLite 243 / PG 237).
 NOT VERIFIED: Docker pack (no container-capable environment reachable), real Neon run, ElevenLabs live, Ollama Cloud, Hugging Face adapter, n8n live, human voice test, frontend voice-engine switch (not built).
 Waiting on Sebastian: Render email verification, Neon connection string as a host env var, ElevenLabs key (A-F plan, 150-char cap), HF account/private dataset + token if the vault is wanted, token vs open-access decision, revoke the exposed xAI key.
+
+
+## Doc refresh (2026-11-12)
+- Header corrected: Phase 11 is current (was still showing Phase 1).
+- Reproducibility gap (NOT RUN / not fixed): no `package-lock.json` and no requirements lockfile in the repo (a `frontend/package-lock.json` exists locally in the 2026-11-12 cloud build only, not pushed); Docker pack never built/run. Do not treat a fresh install as the install tested on 2026-10-21 until lockfiles exist and a Docker build passes on a real host.
+- Render DISQUALIFIED 2026-10-21 as the $0 host (card + temporary $1 authorization demanded on the Free plan; nothing charged, no service created). Host undecided: Back4App vs SnapDeploy, pending owner's pick.
+- Brain correction (2026-11-12, owner): Grok (xAI) never worked — scrapped. The live OMNI brain is Google AI (Gemini) via the Cloudflare relay. Groq remains a working adapter/fallback in code (live call VERIFIED in Colab 2026-10-20) but is no longer the primary brain for the PC-off half.

@@ -1,4 +1,4 @@
-# ElevenLabs voice and n8n automation: scope and contracts (PLAN ONLY, nothing built)
+# ElevenLabs voice and n8n automation: scope and contracts (BUILT — TTS adapter + n8n webhook tool, mocked-verified; live tests still pending)
 
 Facts below were fetched 2026-10-20 (some via a summarizer or secondary articles; marked). Re-verify before relying on them.
 
